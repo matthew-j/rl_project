@@ -15,7 +15,7 @@ def calculate_return(reward_queue, gamma, tau):
 def train():
     ## Train Parameters
     cuda = False
-    render = True
+    render = False
 
     ## Agent / environment Parameters
     joystick_actions = [
@@ -33,7 +33,7 @@ def train():
 
     # Sarsa Parameters
     MAX_STEPS = int(5000 / frame_skips)
-    num_episodes = 1
+    num_episodes = 2000
     n = 8
     gamma = .9
 
