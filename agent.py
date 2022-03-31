@@ -9,14 +9,25 @@ class Agent:
         self.num_actions = num_actions
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=alpha)
 
+        self.epsilon = 1
+        self.epsilon_decay = .99975
+        self.epsilon_min = 0.1
+
+    def save_model(self, file_name):
+        torch.save(self.model.state_dict(), file_name)
+
+    def load_model(self, file_name):
+        self.model.load_state_dict(torch.load(file_name))
+
     def get_action(self, state):
         self.model.eval()
         if np.random.rand() < self.epsilon:
             return np.random.randint(self.num_actions)
         
         action_values = self.model(state)
-        action = torch.argmax(action_values, axis=1).item()
+        action = torch.argmax(action_values, axis=0).item()
 
+        epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         return action
 
     def __call__(self, state, action):
