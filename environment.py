@@ -1,14 +1,14 @@
 import gym
 from gym.spaces import Box
 from gym.wrappers import FrameStack
-import np
+import numpy as np
 import torch
 from torchvision import transforms
 import gym_super_mario_bros
 from nes_py.wrappers import JoypadSpace
 
 ## Create wrappers for environment. Inspired by: https://pytorch.org/tutorials/intermediate/mario_rl_tutorial.html
-class SkipFrames(gym.wrapper):
+class SkipFrames(gym.Wrapper):
     def __init__(self, env, skip):
         super().__init__(env)
         self.num_skips = skip
@@ -17,7 +17,7 @@ class SkipFrames(gym.wrapper):
         tot_reward = 0
         done = False
         for _ in range(self.num_skips):
-            state, reward, info = self.env.step(action)
+            state, reward, done, info = self.env.step(action)
             tot_reward += reward
             if done:
                 break
@@ -32,7 +32,8 @@ class GrayScale(gym.ObservationWrapper):
     def observation(self, observation):
         observation = np.transpose(observation, (2, 0, 1))
         observation = torch.tensor(observation.copy(), dtype=torch.float)
-        observation = transforms.Grayscale(observation)
+        func = transforms.Grayscale()
+        observation = func(observation)
         return observation
 
 class ResizeObservation(gym.ObservationWrapper):
@@ -47,8 +48,11 @@ class ResizeObservation(gym.ObservationWrapper):
         self.observation_space = Box(low=0, high=255, shape=obs_shape, dtype=np.uint8)
 
     def observation(self, observation):
-        observation = transforms.Resize(self.shape)
-        observation = transforms.Normalize(0, 255).squeeze(0)
+        func = transforms.Compose(
+            [transforms.Resize(self.shape), transforms.Normalize(0, 255)]
+        )
+        observation = func(observation).squeeze(0)
+
         return observation
 
 def generate_env():
