@@ -83,8 +83,8 @@ def train():
                 G = calculate_return(reward_queue, gamma)
 
                 if tau + n < MAX_STEPS:
-                    G += (gamma**n) * agent(state_queue[-1], action_queue[-1])
-
+                    with torch.no_grad():
+                        G += (gamma**n) * agent(state_queue[-1], action_queue[-1])
                 agent.update(G, state_queue[0], action_queue[0])
 
             if done:
