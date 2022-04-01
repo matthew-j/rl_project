@@ -48,7 +48,7 @@ def train():
     agent = Agent(alpha, model, epsilon, num_actions, cuda)
 
     if load_model:
-        agent.load_model("saves/MiniCnn15000.pt")
+        agent.load_model("saves/MiniCnn1600.pt")
 
     for episode in range(num_episodes):
         cumulative_reward = 0
@@ -84,7 +84,7 @@ def train():
 
                 if tau + n < MAX_STEPS:
                     with torch.no_grad():
-                        G += (gamma**n) * agent(state_queue[-1], action_queue[-1])
+                        G += (gamma**n) * agent(state_queue[-1], action_queue[-1]).cpu().item()
                 agent.update(G, state_queue[0], action_queue[0])
 
             if done:
