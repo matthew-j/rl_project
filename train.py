@@ -36,7 +36,7 @@ def train():
 
     # Sarsa Parameters
     MAX_STEPS = int(5000 / frame_skips)
-    num_episodes = 1
+    num_episodes = 10000
     n = 8
     gamma = .9
 
@@ -86,7 +86,9 @@ def train():
         
         ## Logging
         if episode % logging_freq == 0:
-            print("Episode {} out of {}. Cumulative reward: {}".format(episode, num_episodes, cumulative_reward))
+            print("Episode {} out of {}. Cumulative reward: {}. Eps = {}"
+                .format(episode, num_episodes, cumulative_reward, agent.get_epsilon())
+            )
 
         ## Model Saving
         if episode % model_save_freq == 0:

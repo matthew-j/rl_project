@@ -17,6 +17,9 @@ class Agent:
         if cuda:
             self.device = torch.device("cuda")
             self.model.to(self.device)
+    
+    def get_epsilon(self):
+        return self.epsilon
 
     def save_model(self, file_name):
         torch.save(self.model.state_dict(), file_name)
