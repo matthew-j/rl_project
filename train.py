@@ -1,3 +1,4 @@
+import logging
 from environment import generate_env
 from agent import Agent
 from models import  MiniCnn
@@ -16,6 +17,8 @@ def train():
     ## Train Parameters
     cuda = False
     render = False
+    model_save_freq = 100
+    logging_freq = 10
 
     ## Agent / environment Parameters
     joystick_actions = [
@@ -33,13 +36,13 @@ def train():
 
     # Sarsa Parameters
     MAX_STEPS = int(5000 / frame_skips)
-    num_episodes = 2000
+    num_episodes = 1
     n = 8
     gamma = .9
 
     model = MiniCnn((frame_stack, 84, 84), num_actions)
     env = generate_env(joystick_actions, frame_skips, frame_stack)
-    agent = Agent(alpha, model, epsilon, num_actions)
+    agent = Agent(alpha, model, epsilon, num_actions, cuda)
 
     for episode in range(num_episodes):
         cumulative_reward = 0
@@ -74,17 +77,22 @@ def train():
                 G = calculate_return(reward_queue, gamma, tau)
 
                 if tau + n < MAX_STEPS:
-                    G += (gamma**n) * agent(cur_state, action_queue[-1])
+                    G += (gamma**n) * agent(state_queue[-1], action_queue[-1])
 
                 agent.update(G, state_queue[0], action_queue[0])
 
             if done:
                 break
         
-        print("Episode {} out of {}. Cumulative reward: {}".format(episode, num_episodes, cumulative_reward))
+        ## Logging
+        if episode % logging_freq == 0:
+            print("Episode {} out of {}. Cumulative reward: {}".format(episode, num_episodes, cumulative_reward))
+
+        ## Model Saving
+        if episode % model_save_freq == 0:
+            agent.save_model("saves/MiniCnn{}.pt".format(episode))
 
     env.close()
-    agent.save_model("temp.pt")
 
 if __name__ == "__main__":
     train()
