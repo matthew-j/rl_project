@@ -54,9 +54,9 @@ class Agent:
     def update(self, G, s_tau, a_tau):
         self.model.train()
         if self.cuda:
-            loss = G - self(s_tau.to(self.device), a_tau)
+            loss = abs(G - self(s_tau.to(self.device), a_tau))
         else:
-            loss = G - self(s_tau, a_tau)
+            loss = abs(G - self(s_tau, a_tau))
         
         self.optimizer.zero_grad()
         loss.backward()

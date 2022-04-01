@@ -17,6 +17,8 @@ def train():
     ## Train Parameters
     cuda = True
     render = False
+    load_model = True
+
     model_save_freq = 100
     logging_freq = 10
     cumulative_rewards = []
@@ -44,6 +46,9 @@ def train():
     model = MiniCnn((frame_stack, 84, 84), num_actions)
     env = generate_env(joystick_actions, frame_skips, frame_stack)
     agent = Agent(alpha, model, epsilon, num_actions, cuda)
+
+    if load_model:
+        agent.load_model("saves/MiniCnn1200.pt")
 
     for episode in range(num_episodes):
         cumulative_reward = 0
