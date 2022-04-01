@@ -19,6 +19,7 @@ def train():
     render = False
     model_save_freq = 100
     logging_freq = 10
+    cumulative_rewards = []
 
     ## Agent / environment Parameters
     joystick_actions = [
@@ -31,7 +32,7 @@ def train():
     num_actions = len(joystick_actions)
     frame_skips = 4
     frame_stack = 4
-    alpha = 0.001
+    alpha = 0.01
     epsilon = 0.1
 
     # Sarsa Parameters
@@ -84,10 +85,12 @@ def train():
             if done:
                 break
         
+        cumulative_rewards.append(cumulative_reward)
+
         ## Logging
         if episode % logging_freq == 0:
-            print("Episode {} out of {}. Cumulative reward: {}. Eps = {}"
-                .format(episode, num_episodes, cumulative_reward, agent.get_epsilon())
+            print("Episode {} out of {}. Avg reward: {}. Eps = {}"
+                .format(episode, num_episodes, sum(cumulative_rewards[-logging_freq:]) / logging_freq, agent.get_epsilon())
             )
 
         ## Model Saving
