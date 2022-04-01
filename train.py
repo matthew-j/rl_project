@@ -6,10 +6,10 @@ from collections import deque
 import numpy as np
 import torch
 
-def calculate_return(reward_queue, gamma, tau):
+def calculate_return(reward_queue, gamma):
     ret = 0
     for i in range(len(reward_queue)):
-        ret += reward_queue[i] * gamma**(i - tau - 1)
+        ret += reward_queue[i] * gamma**(i)
     return ret
 
 
@@ -19,7 +19,7 @@ def train():
     render = False
     load_model = True
 
-    model_save_freq = 100
+    model_save_freq = 200
     logging_freq = 10
     cumulative_rewards = []
 
@@ -34,13 +34,13 @@ def train():
     num_actions = len(joystick_actions)
     frame_skips = 4
     frame_stack = 4
-    alpha = 0.01
+    alpha = 0.001
     epsilon = 0.1
 
     # Sarsa Parameters
     MAX_STEPS = int(5000 / frame_skips)
-    num_episodes = 10000
-    n = 8
+    num_episodes = 50000
+    n = 4
     gamma = .9
 
     model = MiniCnn((frame_stack, 84, 84), num_actions)
@@ -48,7 +48,7 @@ def train():
     agent = Agent(alpha, model, epsilon, num_actions, cuda)
 
     if load_model:
-        agent.load_model("saves/MiniCnn1200.pt")
+        agent.load_model("saves/MiniCnn15000.pt")
 
     for episode in range(num_episodes):
         cumulative_reward = 0
@@ -80,7 +80,7 @@ def train():
 
             tau = t - n + 1
             if tau >= 0:
-                G = calculate_return(reward_queue, gamma, tau)
+                G = calculate_return(reward_queue, gamma)
 
                 if tau + n < MAX_STEPS:
                     G += (gamma**n) * agent(state_queue[-1], action_queue[-1])
@@ -91,6 +91,7 @@ def train():
                 break
         
         cumulative_rewards.append(cumulative_reward)
+        agent.update_epsilon()
 
         ## Logging
         if episode % logging_freq == 0:

@@ -7,11 +7,13 @@ class Agent:
         self.model = model
         self.epsilon = epsilon
         self.num_actions = num_actions
+
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=alpha)
+        self.loss_function = torch.nn.SmoothL1Loss()
 
         self.epsilon = 1.000000
-        self.epsilon_decay = .9999975
-        self.epsilon_min = 0.1
+        self.epsilon_decay = 0.9999
+        self.epsilon_min = 0.01
 
         self.cuda = cuda
         if cuda:
@@ -30,8 +32,10 @@ class Agent:
             self.device = torch.device("cuda")
             self.model.to(self.device)
 
-    def get_action(self, state):
+    def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
+    def get_action(self, state):
         self.model.eval()
 
         if np.random.rand() < self.epsilon:
@@ -54,9 +58,9 @@ class Agent:
     def update(self, G, s_tau, a_tau):
         self.model.train()
         if self.cuda:
-            loss = abs(G - self(s_tau.to(self.device), a_tau))
+            loss = self.loss_function(G, self(s_tau.to(self.device), a_tau))
         else:
-            loss = abs(G - self(s_tau, a_tau))
+            loss = self.loss_function(G, self(s_tau, a_tau))
         
         self.optimizer.zero_grad()
         loss.backward()
