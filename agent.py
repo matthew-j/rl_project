@@ -9,8 +9,8 @@ class Agent:
         self.num_actions = num_actions
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=alpha)
 
-        self.epsilon = 1
-        self.epsilon_decay = .99975
+        self.epsilon = 1.000000
+        self.epsilon_decay = .9999975
         self.epsilon_min = 0.1
 
         self.cuda = cuda
@@ -31,7 +31,9 @@ class Agent:
             self.model.to(self.device)
 
     def get_action(self, state):
+        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         self.model.eval()
+
         if np.random.rand() < self.epsilon:
             return np.random.randint(self.num_actions)
 
@@ -40,10 +42,8 @@ class Agent:
                 action_values = self.model(state.to(self.device))
             else:
                 action_values = self.model(state)
-            action = torch.argmax(action_values, axis=0).item()
 
-            self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-            return action
+            return torch.argmax(action_values, axis=0).item()
 
     def __call__(self, state, action):
         if self.cuda:

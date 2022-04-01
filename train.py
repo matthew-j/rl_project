@@ -15,10 +15,10 @@ def calculate_return(reward_queue, gamma, tau):
 
 def train():
     ## Train Parameters
-    cuda = False
+    cuda = True
     render = False
     model_save_freq = 100
-    logging_freq = 10
+    logging_freq = 1
 
     ## Agent / environment Parameters
     joystick_actions = [
