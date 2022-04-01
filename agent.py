@@ -56,11 +56,12 @@ class Agent:
             return self.model(state)[action]
 
     def update(self, G, s_tau, a_tau):
+        print("Updating")
         self.model.train()
         if self.cuda:
-            loss = self.loss_function(G, self(s_tau.to(self.device), a_tau))
+            loss = self.loss_function(torch.tensor(G), self(s_tau.to(self.device), a_tau))
         else:
-            loss = self.loss_function(G, self(s_tau, a_tau))
+            loss = self.loss_function(torch.tensor(G), self(s_tau, a_tau))
         
         self.optimizer.zero_grad()
         loss.backward()

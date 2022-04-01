@@ -17,7 +17,7 @@ def train():
     ## Train Parameters
     cuda = True
     render = False
-    load_model = True
+    load_model = False
 
     model_save_freq = 200
     logging_freq = 10
