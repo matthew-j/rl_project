@@ -10,7 +10,7 @@ class Agent:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=alpha)
 
         self.epsilon = 1.000000
-        self.epsilon_decay = .9999975
+        self.epsilon_decay = .999975
         self.epsilon_min = 0.1
 
         self.cuda = cuda
