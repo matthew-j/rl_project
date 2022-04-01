@@ -18,7 +18,7 @@ def train():
     cuda = True
     render = False
     model_save_freq = 100
-    logging_freq = 1
+    logging_freq = 10
 
     ## Agent / environment Parameters
     joystick_actions = [
