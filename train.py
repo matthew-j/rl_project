@@ -15,7 +15,7 @@ def calculate_return(reward_queue, gamma):
 
 def train():
     ## Train Parameters
-    cuda = True
+    cuda = False
     render = False
     load_model = False
 
