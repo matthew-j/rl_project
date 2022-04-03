@@ -7,9 +7,9 @@ import numpy as np
 import torch
 
 def calculate_return(reward_queue, gamma):
-    ret = 0
+    ret = reward_queue.popleft()
     for i in range(len(reward_queue)):
-        ret += reward_queue[i] * gamma**(i)
+        ret += reward_queue[i] * gamma**(i + 1)
     return ret
 
 
@@ -64,30 +64,36 @@ def train():
         start_action = agent.get_action(cur_state)
         action_queue.append(start_action)
 
-        for t in range(MAX_STEPS):
-            action = action_queue[-1]
+        T = np.inf
 
-            state, reward, done, info = env.step(action)
-            cumulative_reward += reward
-            if render:
-                env.render()
-            cur_state = torch.tensor(np.array(state))
-            
-            next_action = agent.get_action(cur_state)
-            action_queue.append(next_action)
-            state_queue.append(cur_state)
-            reward_queue.append(reward)
+        for t in range(MAX_STEPS):
+            if t < T:
+                action = action_queue[-1]
+
+                state, reward, done, info = env.step(action)
+                cumulative_reward += reward
+                if render:
+                    env.render()
+                cur_state = torch.tensor(np.array(state))
+                
+                next_action = agent.get_action(cur_state)
+                action_queue.append(next_action)
+                state_queue.append(cur_state)
+                reward_queue.append(reward)
+                if done:
+                    T = t + 1
 
             tau = t - n + 1
+            #print("time", t, "tau", tau, "T", T, "reward queue", reward_queue)
             if tau >= 0:
                 G = calculate_return(reward_queue, gamma)
-
-                if tau + n < MAX_STEPS:
+                #print("G", G)
+                if tau + n < T:
                     with torch.no_grad():
                         G += (gamma**n) * agent(state_queue[-1], action_queue[-1]).cpu().item()
                 agent.update(G, state_queue[0], action_queue[0])
 
-            if done:
+            if tau == T - 1:
                 break
         
         cumulative_rewards.append(cumulative_reward)
