@@ -1,4 +1,5 @@
 import torch
+from torch.distributions import Categorical
 import numpy as np
 
 class Agent:
@@ -34,6 +35,22 @@ class Agent:
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
+    def get_action_softmax(self, state):
+        self.model.eval()
+        if self.cuda:
+            action_values = self.model(state.to(self.device))
+        else:
+            action_values = self.model(state)
+        
+        print("NN output:", action_values)
+        action_value_dist = torch.nn.functional.softmax(action_values, dim=0)
+        print("Softmax output: ", action_value_dist)
+        prob_dist = Categorical(action_value_dist)
+        action = prob_dist.sample().item()
+
+        print("Action chosen:", action)
+        return action 
 
     def get_action(self, state):
         self.model.eval()

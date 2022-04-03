@@ -1,7 +1,7 @@
 import logging
 from environment import generate_env
 from agent import Agent
-from models import  MiniCnn
+from models import  MiniCnn, Cnn
 from collections import deque
 import numpy as np
 import torch
@@ -16,8 +16,9 @@ def calculate_return(reward_queue, gamma):
 def train():
     ## Train Parameters
     cuda = False
-    render = False
+    render = True
     load_model = False
+    model_file = "saves/MiniCnn200.pt"
 
     model_save_freq = 200
     logging_freq = 10
@@ -32,7 +33,7 @@ def train():
         ['right', 'A', 'B'],
     ]
     num_actions = len(joystick_actions)
-    frame_skips = 4
+    frame_skips = 8
     frame_stack = 4
     alpha = 0.001
     epsilon = 0.1
@@ -43,12 +44,12 @@ def train():
     n = 4
     gamma = .9
 
-    model = MiniCnn((frame_stack, 84, 84), num_actions)
+    model = Cnn((frame_stack, 84, 84), num_actions)
     env = generate_env(joystick_actions, frame_skips, frame_stack)
     agent = Agent(alpha, model, epsilon, num_actions, cuda)
 
     if load_model:
-        agent.load_model("saves/MiniCnn1600.pt")
+        agent.load_model(model_file)
 
     for episode in range(num_episodes):
         cumulative_reward = 0
