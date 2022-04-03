@@ -21,6 +21,7 @@ def train():
     model_file = "saves/MiniCnn200.pt"
 
     model_save_freq = 200
+    batch_size = 4
     logging_freq = 10
     cumulative_rewards = []
 
@@ -44,9 +45,9 @@ def train():
     n = 4
     gamma = .9
 
-    model = Cnn((frame_stack, 84, 84), num_actions)
+    model = MiniCnn((frame_stack, 84, 84), num_actions)
     env = generate_env(joystick_actions, frame_skips, frame_stack)
-    agent = Agent(alpha, model, epsilon, num_actions, cuda)
+    agent = Agent(alpha, model, epsilon, num_actions, batch_size, cuda)
 
     if load_model:
         agent.load_model(model_file)
@@ -60,10 +61,12 @@ def train():
 
         done = False
         cur_state = env.reset()
-        cur_state = torch.tensor(np.array(cur_state))
+        cur_state = torch.tensor([np.array(cur_state)])
         state_queue.append(cur_state)
         start_action = agent.get_action(cur_state)
         action_queue.append(start_action)
+
+        memory = []
 
         T = np.inf
 
@@ -75,7 +78,7 @@ def train():
                 cumulative_reward += reward
                 if render:
                     env.render()
-                cur_state = torch.tensor(np.array(state))
+                cur_state = torch.tensor([np.array(state)])
                 
                 next_action = agent.get_action(cur_state)
                 action_queue.append(next_action)
@@ -85,14 +88,16 @@ def train():
                     T = t + 1
 
             tau = t - n + 1
-            #print("time", t, "tau", tau, "T", T, "reward queue", reward_queue)
             if tau >= 0:
                 G = calculate_return(reward_queue, gamma)
-                #print("G", G)
                 if tau + n < T:
                     with torch.no_grad():
                         G += (gamma**n) * agent(state_queue[-1], action_queue[-1]).cpu().item()
-                agent.update(G, state_queue[0], action_queue[0])
+                memory.append((torch.tensor([G]), state_queue[0], torch.tensor([action_queue[0]])))
+                if tau % batch_size == 0:
+                    Gs, states, actions = map(torch.cat, zip(*memory))
+                    agent.update(Gs, states, actions)
+                    memory.clear()
 
             if tau == T - 1:
                 break

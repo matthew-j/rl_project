@@ -3,7 +3,7 @@ from torch.distributions import Categorical
 import numpy as np
 
 class Agent:
-    def __init__(self, alpha, model, epsilon, num_actions, cuda):
+    def __init__(self, alpha, model, epsilon, num_actions, batch_size, cuda):
         self.alpha = alpha
         self.model = model
         self.epsilon = epsilon
@@ -20,6 +20,8 @@ class Agent:
         if cuda:
             self.device = torch.device("cuda")
             self.model.to(self.device)
+
+        self.batch_size = batch_size
     
     def get_epsilon(self):
         return self.epsilon
@@ -64,13 +66,18 @@ class Agent:
             else:
                 action_values = self.model(state)
 
-            return torch.argmax(action_values, axis=0).item()
+            return torch.argmax(action_values, axis=1).item()
 
     def __call__(self, state, action):
+        batches = state.size()[0]
         if self.cuda:
-            return self.model(state.to(self.device))[action]
+            return self.model(state.to(self.device))[
+                np.arange(0, batches), action
+            ]
         else:
-            return self.model(state)[action]
+            return self.model(state)[
+                np.arange(0, batches), action
+            ]
 
     def update(self, G, s_tau, a_tau):
         self.model.train()
