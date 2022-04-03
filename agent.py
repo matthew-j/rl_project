@@ -57,7 +57,10 @@ class Agent:
 
     def update(self, G, s_tau, a_tau):
         self.model.train()
-        loss = self.loss_function(torch.tensor(G, device = self.device), self(s_tau, a_tau))
+        if self.cuda:
+            loss = self.loss_function(torch.tensor(G, device = self.device), self(s_tau, a_tau))
+        else:
+            loss = self.loss_function(torch.tensor(G), self(s_tau, a_tau))
         
         self.optimizer.zero_grad()
         loss.backward()
