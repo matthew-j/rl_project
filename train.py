@@ -15,8 +15,8 @@ def calculate_return(reward_queue, gamma):
 
 def train():
     ## Train Parameters
-    cuda = False
-    render = True
+    cuda = True
+    render = False
     load_model = False
     model_file = "saves/MiniCnn200.pt"
 
@@ -36,7 +36,7 @@ def train():
     num_actions = len(joystick_actions)
     frame_skips = 8
     frame_stack = 4
-    alpha = 0.001
+    alpha = 0.0025
     epsilon = 0.1
 
     # Sarsa Parameters
@@ -52,6 +52,7 @@ def train():
     if load_model:
         agent.load_model(model_file)
 
+    memory = []
     for episode in range(num_episodes):
         cumulative_reward = 0
         # Sarsa Objects
@@ -65,8 +66,6 @@ def train():
         state_queue.append(cur_state)
         start_action = agent.get_action(cur_state)
         action_queue.append(start_action)
-
-        memory = []
 
         T = np.inf
 

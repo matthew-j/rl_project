@@ -14,7 +14,7 @@ class Agent:
 
         self.epsilon = 1.000000
         self.epsilon_decay = 0.9999
-        self.epsilon_min = 0.01
+        self.epsilon_min = 0.1
 
         self.cuda = cuda
         if cuda:
