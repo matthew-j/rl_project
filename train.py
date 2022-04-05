@@ -1,10 +1,11 @@
 import logging
 from environment import generate_env
 from agent import Agent
-from models import  MiniCnn, Cnn
+from models import  *
 from collections import deque
 import numpy as np
 import torch
+import cv2
 
 def calculate_return(reward_queue, gamma):
     ret = reward_queue.popleft()
@@ -12,17 +13,21 @@ def calculate_return(reward_queue, gamma):
         ret += reward_queue[i] * gamma**(i + 1)
     return ret
 
+## less resizing
+## bigger model
+## q learning
+## v3.0
 
 def train():
     ## Train Parameters
-    cuda = True
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     render = False
     load_model = False
-    model_file = "saves/MiniCnn200.pt"
+    model_file = "saves/MiniCnn3000.pt"
 
-    model_save_freq = 200
-    batch_size = 4
-    logging_freq = 10
+    model_save_freq = 500
+    batch_size = 64
+    logging_freq = 100
     cumulative_rewards = []
 
     ## Agent / environment Parameters
@@ -36,7 +41,7 @@ def train():
     num_actions = len(joystick_actions)
     frame_skips = 8
     frame_stack = 4
-    alpha = 0.0025
+    alpha = 0.0001
     epsilon = 0.1
 
     # Sarsa Parameters
@@ -45,14 +50,15 @@ def train():
     n = 4
     gamma = .9
 
-    model = MiniCnn((frame_stack, 84, 84), num_actions)
+    model = Cnn((frame_stack, 84, 84), num_actions)
     env = generate_env(joystick_actions, frame_skips, frame_stack)
-    agent = Agent(alpha, model, epsilon, num_actions, batch_size, cuda)
+    agent = Agent(alpha, model, epsilon, num_actions, batch_size, device)
 
     if load_model:
         agent.load_model(model_file)
 
     memory = []
+    total_steps = 0
     for episode in range(num_episodes):
         cumulative_reward = 0
         # Sarsa Objects
@@ -78,7 +84,6 @@ def train():
                 if render:
                     env.render()
                 cur_state = torch.tensor([np.array(state)])
-                
                 next_action = agent.get_action(cur_state)
                 action_queue.append(next_action)
                 state_queue.append(cur_state)
@@ -93,7 +98,8 @@ def train():
                     with torch.no_grad():
                         G += (gamma**n) * agent(state_queue[-1], action_queue[-1]).cpu().item()
                 memory.append((torch.tensor([G]), state_queue[0], torch.tensor([action_queue[0]])))
-                if tau % batch_size == 0:
+                total_steps += 1
+                if total_steps % batch_size == 0:
                     Gs, states, actions = map(torch.cat, zip(*memory))
                     agent.update(Gs, states, actions)
                     memory.clear()
