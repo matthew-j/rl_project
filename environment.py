@@ -56,12 +56,11 @@ class ResizeObservation(gym.ObservationWrapper):
         return observation
 
 def generate_env(actions, skip_num, frame_stack):
-    env = gym_super_mario_bros.make("SuperMarioBros-1-1-v1")
+    env = gym_super_mario_bros.make("SuperMarioBros-v0")
     env = JoypadSpace(env, actions)
-    env.reset()
     env = SkipFrames(env, skip=skip_num)
     env = GrayScale(env)
-    env = ResizeObservation(env, shape=128)
+    env = ResizeObservation(env, shape=84)
     env = FrameStack(env, num_stack=frame_stack)
 
     return env

@@ -20,13 +20,13 @@ def calculate_return(reward_queue, gamma):
 
 def train():
     ## Train Parameters
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    render = False
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    render = True
     load_model = False
     model_file = "saves/MiniCnn3000.pt"
 
     model_save_freq = 500
-    batch_size = 64
+    batch_size = 16
     logging_freq = 100
     cumulative_rewards = []
 
@@ -50,7 +50,7 @@ def train():
     n = 4
     gamma = .9
 
-    model = Cnn((frame_stack, 84, 84), num_actions)
+    model = MiniCnn((frame_stack, 84, 84), num_actions)
     env = generate_env(joystick_actions, frame_skips, frame_stack)
     agent = Agent(alpha, model, epsilon, num_actions, batch_size, device)
 
@@ -96,7 +96,7 @@ def train():
                 G = calculate_return(reward_queue, gamma)
                 if tau + n < T:
                     with torch.no_grad():
-                        G += (gamma**n) * agent(state_queue[-1], action_queue[-1]).cpu().item()
+                        G += (gamma**n) * agent(state_queue[-1], action_queue[-1]).item()
                 memory.append((torch.tensor([G]), state_queue[0], torch.tensor([action_queue[0]])))
                 total_steps += 1
                 if total_steps % batch_size == 0:

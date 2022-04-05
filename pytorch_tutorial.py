@@ -154,7 +154,7 @@ class Mario:
             else:
                 state = torch.tensor(state)
             state = state.unsqueeze(0)
-            action_values = self.net(state, model="online")
+            action_values = self.net(state, model="target")
             action_idx = torch.argmax(action_values, axis=1).item()
 
         # decrease exploration_rate
@@ -295,7 +295,9 @@ class Mario(Mario):
         print(f"MarioNet saved to {save_path} at step {self.curr_step}")
 
     def load(self, model_file):
-        self.net.load_state_dict(torch.load(model_file))
+        state_dict = torch.load(model_file)
+        self.net.load_state_dict(state_dict["model"])
+        self.exploration_rate = state_dict["exploration_rate"]
 
 class Mario(Mario):
     def __init__(self, state_dim, action_dim, save_dir):
@@ -439,12 +441,12 @@ class MetricLogger:
 
 use_cuda = torch.cuda.is_available()
 print(f"Using CUDA: {use_cuda}")
-print()
 
 save_dir = Path("checkpoints") / datetime.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
 save_dir.mkdir(parents=True)
 
 mario = Mario(state_dim=(4, 84, 84), action_dim=env.action_space.n, save_dir=save_dir)
+mario.load("checkpoints/2022-04-05T00-25-18/mario_net_10.chkpt")
 
 logger = MetricLogger(save_dir)
 
@@ -461,6 +463,7 @@ for e in range(episodes):
 
         # Agent performs action
         next_state, reward, done, info = env.step(action)
+        env.render()
 
         # Remember
         mario.cache(state, next_state, action, reward, done)

@@ -7,6 +7,7 @@ class Agent:
         self.device = device
         self.alpha = alpha
         self.model = model
+        self.model.to(self.device)
         self.epsilon = epsilon
         self.num_actions = num_actions
 
@@ -14,7 +15,7 @@ class Agent:
         self.loss_function = torch.nn.SmoothL1Loss()
 
         self.epsilon = 1.000000
-        self.epsilon_decay = 0.9999
+        self.epsilon_decay = 0.99999
         self.epsilon_min = 0.1
         self.batch_size = batch_size
     
