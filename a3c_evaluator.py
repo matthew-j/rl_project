@@ -8,8 +8,11 @@ def evaluate(target_model, num_episodes, render):
     model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
     model.eval()
 
-
+    model_save_freq = 20
     for i in range(num_episodes):
+        if (i + 1) % model_save_freq == 0:
+            torch.save(model.state_dict(), f"saves/actor_critic{i}.pt")
+
         cur_state = env.reset()
         model.load_state_dict(target_model.state_dict())
 
