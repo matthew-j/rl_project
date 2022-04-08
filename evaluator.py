@@ -27,7 +27,7 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
 
             cur_state = torch.tensor([cur_state.__array__().tolist()])
             with torch.no_grad():
-                action, (hidden_state, cell_state) = eval_model.act((cur_state, (hidden_state, cell_state)))
+                action, _, (hidden_state, cell_state) = eval_model.act((cur_state, (hidden_state, cell_state)))
             cur_state, reward, done, info = env.step(action)
             if render:
                 env.render()

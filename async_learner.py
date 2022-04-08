@@ -7,7 +7,7 @@ from  models import ActorCriticNN
 from environment import generate_env
 from shared_optimization import copy_learner_grads
 
-def train(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamma, beta, optimizer):
+def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamma, beta, optimizer):
     env = generate_env()
     torch.manual_seed(1 + pnum)
     model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
@@ -75,7 +75,49 @@ def train(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamma, bet
         copy_learner_grads(model, target_model)
         optimizer.step()
 
+def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, epsilon, epsilon_decay, gamma, I_target, optimizer):
+    env = generate_env()
+    torch.manual_seed(1 + pnum)
+    
+    done = True
+    loss = torch.zeros(1, 1)
+    print(T, Tmax)
+    while(T.data < Tmax):
+        cur_state = env.reset()
+        cur_state = torch.tensor([cur_state.__array__().tolist()])
 
+        if done:
+            cell_state = torch.zeros(1, 256)
+            hidden_state = torch.zeros(1, 256)
+        else:
+            cell_state = cell_state.detach()
+            hidden_state = hidden_state.detach()
+        for step in range(max_steps):
+            action, q_value, (cell_state, hidden_state) = behavioral_model.act((cur_state, (hidden_state, cell_state)), epsilon)
 
+            next_state, reward, done, info = env.step(action)
+            cur_state = torch.tensor([next_state.__array__().tolist()])
+            reward = max(min(reward, 50), -5)
+            if not done:
+                _, target_q_value, _ = target_model.act((cur_state, (hidden_state, cell_state)), epsilon=0)
+                reward += gamma * target_q_value
+
+            loss += (reward - q_value) * (reward - q_value)
+
+            with Tlock:
+                T += 1
+
+            if T % I_target == 0:
+                target_model.load_state_dict(behavioral_model.state_dict)
+
+            if done:
+                break
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        loss = torch.zeros(1, 1)
+        
+        epsilon = max(epsilon * epsilon_decay, 0.1)
 
     
