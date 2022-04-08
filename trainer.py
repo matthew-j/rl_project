@@ -5,7 +5,7 @@ import torch.multiprocessing as mp
 from torch.distributions import Categorical
 
 from evaluator import evaluate
-from async_learner import a3c_learner, q_learner
+from async_learner import a3c_learner, q_learner, nstep_q_learner
 from models import ActorCriticNN, QLearningNN
 from environment import generate_env
 from shared_optimization import SharedAdam
@@ -89,11 +89,71 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     p.start()
 
     for i in range(0, num_processes):
-        if i < num_processes // 2:
-            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, sample_action, .9, .01, optimizer))
-        else:
-            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, argmax_action, .9, .01, optimizer))
         p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.99, 0.9, 500, optimizer))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+
+def train_qlearning(num_processes, Tmax, render, model_file):
+    env = generate_env()
+    target_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    behavioral_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    target_model.share_memory()
+    behavioral_model.share_memory()
+
+    if model_file is not None:
+        target_model.load_state_dict(model_file)
+
+    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
+
+    T = torch.tensor(0)
+    T.share_memory_()
+    Tlock = mp.Lock()
+    
+    processes = []
+    p = mp.Process(target = evaluate, 
+        args = ("qlearn", target_model, QLearningNN(env.observation_space.shape, env.action_space.n), 
+        T, Tmax, render)
+    )
+    processes.append(p)
+    p.start()
+
+    for i in range(0, num_processes):
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.99, 0.9, 500, optimizer))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+
+def train_nstep_qlearning(num_processes, Tmax, render, model_file):
+    env = generate_env()
+    target_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    behavioral_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    target_model.share_memory()
+    behavioral_model.share_memory()
+
+    if model_file is not None:
+        target_model.load_state_dict(model_file)
+
+    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
+
+    T = torch.tensor(0)
+    T.share_memory_()
+    Tlock = mp.Lock()
+    
+    processes = []
+    p = mp.Process(target = evaluate, 
+        args = ("nqlearn", target_model, QLearningNN(env.observation_space.shape, env.action_space.n), 
+        T, Tmax, render)
+    )
+    processes.append(p)
+    p.start()
+
+    for i in range(0, num_processes):
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.99, 0.9, 500, optimizer))
         p.start()
         processes.append(p)
 
@@ -113,6 +173,6 @@ if __name__ == "__main__":
     elif args.algorithm == "qlearn":
         train_qlearning(num_processes, Tmax, render, model_file)
     elif args.algorithm == "nqlearn":
-        pass
+        train_nstep_qlearning(num_processes, Tmax, render, model_file)
     else:
         print("Wrong algorithm")
