@@ -71,7 +71,7 @@ class ActorCriticNN(nn.Module):
         q_values, _, (hidden_state, cell_state) = self(inputs)
         action = argmax(q_values).item()
 
-        return action, q_values[action], (hidden_state, cell_state)
+        return action, q_values[0][action], (hidden_state, cell_state)
 
 
 class QLearningNN(nn.Module):
@@ -112,14 +112,14 @@ class QLearningNN(nn.Module):
 
         return q_values, (hidden_state, cell_state)
 
-    def act(self, inputs, epsilon):
+    def act(self, inputs, epsilon=0):
         q_values, (hidden_state, cell_state) = self(inputs)
         if np.random.randint(len(q_values)) < epsilon:
             action = np.random.randint(len(q_values))
         else:
             action = argmax(q_values).item()
         
-        return action, q_values[action], (hidden_state, cell_state)
+        return action, q_values[0][action], (hidden_state, cell_state)
 
 
 class ActorCriticNN4Layers(nn.Module):

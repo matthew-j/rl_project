@@ -65,8 +65,8 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamm
         for i in reversed(range(len(rewards))):
             R = rewards[i] + gamma * R
             advantage_estimation = advantage_estimation * gamma + (rewards[i] + gamma * state_values[i+1].detach() - state_values[i].detach())
-            q_loss -= log_probs[i] * advantage_estimation - beta * entropy[i]
-            v_loss += 0.5 * (R - state_values[i])**2
+            q_loss = q_loss - log_probs[i] * advantage_estimation - beta * entropy[i]
+            v_loss = v_loss + 0.5 * (R - state_values[i])**2
             
         optimizer.zero_grad()
         (q_loss + .5 * v_loss).backward()
@@ -81,7 +81,6 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
     
     done = True
     loss = torch.zeros(1, 1)
-    print(T, Tmax)
     while(T.data < Tmax):
         cur_state = env.reset()
         cur_state = torch.tensor([cur_state.__array__().tolist()])
@@ -100,15 +99,15 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
             reward = max(min(reward, 50), -5)
             if not done:
                 _, target_q_value, _ = target_model.act((cur_state, (hidden_state, cell_state)), epsilon=0)
-                reward += gamma * target_q_value
+                reward += gamma * target_q_value.detach()
 
-            loss += (reward - q_value) * (reward - q_value)
+            loss = loss + (reward - q_value) * (reward - q_value)
 
             with Tlock:
                 T += 1
 
             if T % I_target == 0:
-                target_model.load_state_dict(behavioral_model.state_dict)
+                target_model.load_state_dict(behavioral_model.state_dict())
 
             if done:
                 break
