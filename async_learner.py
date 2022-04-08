@@ -1,27 +1,20 @@
 import torch
 import torch.nn.functional as F
-import torch.optim as optim
 from torch.distributions import Categorical
 import numpy as np
 
 from  models import ActorCriticNN
 from environment import generate_env
+from shared_optimization import copy_learner_grads
 
-def ensure_shared_grads(model, shared_model):
-    for param, shared_param in zip(model.parameters(),
-                                   shared_model.parameters()):
-        if shared_param.grad is not None:
-            return
-        shared_param._grad = param.grad
-
-def train(pnum, target_model, agent_episodes, max_steps, action_func, gamma, beta, optimizer):
+def train(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamma, beta, optimizer):
     env = generate_env()
     torch.manual_seed(1 + pnum)
     model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
     model.train()
     
     done = True
-    for i in range(agent_episodes):
+    while(T.data < Tmax):
         cur_state = env.reset()
         cur_state = torch.tensor([cur_state.__array__().tolist()])
         model.load_state_dict(target_model.state_dict())
@@ -54,6 +47,9 @@ def train(pnum, target_model, agent_episodes, max_steps, action_func, gamma, bet
 
             cur_state = torch.tensor([next_state.__array__().tolist()])
 
+            with Tlock:
+                T += 1
+
             if done:
                 break
         
@@ -76,7 +72,7 @@ def train(pnum, target_model, agent_episodes, max_steps, action_func, gamma, bet
         (q_loss + .5 * v_loss).backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 250)
 
-        ensure_shared_grads(model, target_model)
+        copy_learner_grads(model, target_model)
         optimizer.step()
 
 

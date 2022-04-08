@@ -1,20 +1,18 @@
 import time
 import torch
-from models import ActorCriticNN
+import logging
+
 from environment import generate_env
 
-def evaluate(target_model, num_episodes, render):
+def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
+    logging.basicConfig(filename=f"logs/{algorithm_name}.log", level=logging.DEBUG)
     env = generate_env()
-    model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
-    model.eval()
+    eval_model.eval()
+    savecnt = 0
 
-    model_save_freq = 20
-    for i in range(num_episodes):
-        if (i + 1) % model_save_freq == 0:
-            torch.save(model.state_dict(), f"saves/actor_critic{i}.pt")
-
+    while(T.data < Tmax):
         cur_state = env.reset()
-        model.load_state_dict(target_model.state_dict())
+        eval_model.load_state_dict(target_model.state_dict())
 
         done = True
         episode_reward = 0
@@ -29,7 +27,7 @@ def evaluate(target_model, num_episodes, render):
 
             cur_state = torch.tensor([cur_state.__array__().tolist()])
             with torch.no_grad():
-                action, (hidden_state, cell_state) = model.act((cur_state, (hidden_state, cell_state)))
+                action, (hidden_state, cell_state) = eval_model.act((cur_state, (hidden_state, cell_state)))
             cur_state, reward, done, info = env.step(action)
             if render:
                 env.render()
@@ -39,9 +37,11 @@ def evaluate(target_model, num_episodes, render):
                 break
 
         # Wait a bit until model may be different
-        print(f"Episode {i} reward: {episode_reward}")
+        step_num = T.data
+        info_string = f"Time: {time.asctime()} Step: {step_num} Reward: {episode_reward}"
+        logging.info(info_string)
+        print(info_string)
+        
+        if savecnt % 4 == 0:
+            torch.save(eval_model.state_dict(), f"saves/{algorithm_name}{step_num}.pt")
         time.sleep(60)
-
-            
-
-
