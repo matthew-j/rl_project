@@ -1,3 +1,4 @@
+import os
 import argparse
 import torch
 from torch import argmax
@@ -37,7 +38,7 @@ def train_a3c(num_processes, Tmax, render, model_file):
     target_model.share_memory()
 
     if model_file is not None:
-        target_model.load_state_dict(model_file)
+        target_model.load_state_dict(torch.load(model_file))
 
     optimizer = SharedAdam(target_model.parameters(), lr = 0.0001)
 
@@ -161,6 +162,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
         p.join()
 
 if __name__ == "__main__":
+    os.environ['OMP_NUM_THREADS'] = '1'
     args = parser.parse_args()
 
     num_processes = args.processes

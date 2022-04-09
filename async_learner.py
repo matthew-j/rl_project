@@ -111,7 +111,7 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
 
             if done:
                 break
-
+        behavioral_model.zero_grad()
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
