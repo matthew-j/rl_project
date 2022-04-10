@@ -27,7 +27,7 @@ class MiniCnn(nn.Module):
     def forward(self, input):
         return self.model(input)
 
-class ActorCriticNND(nn.Module):
+class ActorCriticNN(nn.Module):
     """mini cnn structure
   input -> (conv2d + relu) x 3 -> flatten -> (dense + relu) x 2 -> output
   """
@@ -122,7 +122,7 @@ class QLearningNN(nn.Module):
         return action, q_values[0][action], (hidden_state, cell_state)
 
 
-class ActorCriticNN(nn.Module):
+class ActorCriticNN4Layer(nn.Module):
     """mini cnn structure
   input -> (conv2d + relu) x 3 -> flatten -> (dense + relu) x 2 -> output
   """
