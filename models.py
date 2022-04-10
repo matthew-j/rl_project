@@ -27,7 +27,7 @@ class MiniCnn(nn.Module):
     def forward(self, input):
         return self.model(input)
 
-class ActorCriticNN(nn.Module):
+class ActorCriticNND(nn.Module):
     """mini cnn structure
   input -> (conv2d + relu) x 3 -> flatten -> (dense + relu) x 2 -> output
   """
@@ -62,7 +62,7 @@ class ActorCriticNN(nn.Module):
         x5 = self.linear1(x4)
         hidden_state, cell_state = self.lstm(x5, (hidden_state, cell_state))
 
-        q_values = F.softmax(self.q_linear(hidden_state), dim=-1)
+        q_values = self.q_linear(hidden_state)
         state_values = self.value_linear(hidden_state)
 
         return q_values, state_values, (hidden_state, cell_state)
@@ -112,7 +112,7 @@ class QLearningNN(nn.Module):
 
         return q_values, (hidden_state, cell_state)
 
-    def act(self, inputs, epsilon=0):
+    def act(self, inputs, epsilon=.1):
         q_values, (hidden_state, cell_state) = self(inputs)
         if np.random.randint(len(q_values)) < epsilon:
             action = np.random.randint(len(q_values))
@@ -122,7 +122,7 @@ class QLearningNN(nn.Module):
         return action, q_values[0][action], (hidden_state, cell_state)
 
 
-class ActorCriticNN4Layers(nn.Module):
+class ActorCriticNN(nn.Module):
     """mini cnn structure
   input -> (conv2d + relu) x 3 -> flatten -> (dense + relu) x 2 -> output
   """
@@ -159,11 +159,13 @@ class ActorCriticNN4Layers(nn.Module):
         x5 = self.linear1(x4)
         hidden_state, cell_state = self.lstm(x5, (hidden_state, cell_state))
 
-        q_values = F.softmax(self.q_linear(hidden_state), dim=-1)
+        q_values = self.q_linear(hidden_state)
         state_values = self.value_linear(hidden_state)
 
         return q_values, state_values, (hidden_state, cell_state)
 
     def act(self, inputs):
         q_values, _, (hidden_state, cell_state) = self(inputs)
-        return argmax(q_values).item(), (hidden_state, cell_state)
+        action = argmax(q_values).item()
+
+        return action, q_values[0][action], (hidden_state, cell_state)

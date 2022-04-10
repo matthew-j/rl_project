@@ -24,7 +24,7 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
             else:
                 cell_state = cell_state.detach()
                 hidden_state = hidden_state.detach()
-
+    
             cur_state = torch.tensor([cur_state.__array__().tolist()])
             with torch.no_grad():
                 action, _, (hidden_state, cell_state) = eval_model.act((cur_state, (hidden_state, cell_state)))
@@ -42,6 +42,7 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
         logging.info(info_string)
         print(info_string)
         
-        if savecnt % 4 == 0:
+        savecnt += 1
+        if savecnt % 8 == 0:
             torch.save(eval_model.state_dict(), f"saves/{algorithm_name}{step_num}.pt")
-        time.sleep(60)
+        time.sleep(30)

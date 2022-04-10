@@ -18,7 +18,7 @@ parser.add_argument('algorithm', metavar='a', type=str,
 parser.add_argument('--processes', metavar='p', type=int, 
                     help='number of processes to train with', default=4)
 parser.add_argument('--tmax', metavar='t', type=int, 
-                    help='number of steps to run', default=10000000)
+                    help='number of steps to run', default=5000000)
 parser.add_argument('--render', metavar='r', type=bool, 
                     help='whether to render mario', default=False)
 parser.add_argument('--model_file', metavar='m', type=str, 
@@ -90,39 +90,7 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     p.start()
 
     for i in range(0, num_processes):
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.99, 0.9, 500, optimizer))
-        p.start()
-        processes.append(p)
-
-    for p in processes:
-        p.join()
-
-def train_qlearning(num_processes, Tmax, render, model_file):
-    env = generate_env()
-    target_model = QLearningNN(env.observation_space.shape, env.action_space.n)
-    behavioral_model = QLearningNN(env.observation_space.shape, env.action_space.n)
-    target_model.share_memory()
-    behavioral_model.share_memory()
-
-    if model_file is not None:
-        target_model.load_state_dict(model_file)
-
-    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
-
-    T = torch.tensor(0)
-    T.share_memory_()
-    Tlock = mp.Lock()
-    
-    processes = []
-    p = mp.Process(target = evaluate, 
-        args = ("qlearn", target_model, QLearningNN(env.observation_space.shape, env.action_space.n), 
-        T, Tmax, render)
-    )
-    processes.append(p)
-    p.start()
-
-    for i in range(0, num_processes):
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.99, 0.9, 500, optimizer))
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.999, 0.9, 5000, optimizer))
         p.start()
         processes.append(p)
 
