@@ -3,14 +3,14 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 import numpy as np
 
-from  models import ActorCriticNN
+from  models import ActorCriticNN, CartPoleActorCriticNN
 from environment import generate_env
 from shared_optimization import copy_learner_grads
 
 def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamma, beta, optimizer):
     env = generate_env()
     torch.manual_seed(1 + pnum)
-    model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
+    model = CartPoleActorCriticNN(env.observation_space.shape, env.action_space.n)
     model.train()
     
     done = True

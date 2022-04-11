@@ -141,13 +141,14 @@ def generate_env(actions= [
         ['right', 'B'],
         ['right', 'A', 'B'],
     ], skip_num=4, frame_stack=4):
-    env = gym_super_mario_bros.make("SuperMarioBros-1-1-v0")
-    env = JoypadSpace(env, actions)
-    env = CustomReward(env)
-    env = SkipFrames(env, skip=skip_num)
-    env = NoopResetEnv(env)
-    env = GrayScale(env)
-    env = ResizeObservation(env, shape=84)
-    env = FrameStack(env, num_stack=frame_stack)
+    # env = gym_super_mario_bros.make("SuperMarioBros-1-1-v0")
+    # env = JoypadSpace(env, actions)
+    # env = CustomReward(env)
+    # env = SkipFrames(env, skip=skip_num)
+    # env = NoopResetEnv(env)
+    # env = GrayScale(env)
+    # env = ResizeObservation(env, shape=84)
+    # env = FrameStack(env, num_stack=frame_stack)
+    env = gym.make("CartPole-v0")
 
     return env

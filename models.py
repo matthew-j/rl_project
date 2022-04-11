@@ -167,3 +167,64 @@ class ActorCriticNN4Layers(nn.Module):
     def act(self, inputs):
         q_values, _, (hidden_state, cell_state) = self(inputs)
         return argmax(q_values).item(), (hidden_state, cell_state)
+
+class CartPoleActorCriticNN(nn.Module):
+    def init_weights(self, m):
+        if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+            torch.nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0)
+    
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        c, *_ = input_dim
+
+        # Based on https://blog.gofynd.com/building-a-deep-q-network-in-pytorch-fa1086aa5435
+        self.linear1 = nn.Linear(c, 64)
+        self.linear2 = nn.Linear(64, output_dim)
+        self.value_linear = nn.Linear(64, 1)
+        self.apply(self.init_weights)
+
+    def forward(self, inputs):
+        x0, *_ = inputs
+        x1 = torch.tanh(self.linear1(x0))
+        q_values = F.softmax(self.linear2(x1), dim=-1)
+        state_value = self.value_linear(x1)
+
+        return q_values, state_value, (torch.tensor([]), torch.tensor([]))
+
+    def act(self, inputs):
+        q_values, _, (hidden_state, cell_state) = self(inputs)
+        action = argmax(q_values).item()
+
+        return action, q_values[0][action], (hidden_state, cell_state)
+
+class CartPoleQLearningNN(nn.Module):
+    def init_weights(self, m):
+        if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+            torch.nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0)
+    
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        c, *_ = input_dim
+
+        # Based on https://blog.gofynd.com/building-a-deep-q-network-in-pytorch-fa1086aa5435
+        self.linear1 = nn.Linear(c, 64)
+        self.linear2 = nn.Linear(64, output_dim)
+        self.apply(self.init_weights)
+
+    def forward(self, inputs):
+        x0, *_ = inputs
+        x1 = torch.tanh(self.linear1(x0))
+        outputs = self.linear2(x1)
+
+        return outputs, (torch.tensor([]), torch.tensor([]))
+
+    def act(self, inputs, epsilon=0):
+        q_values, (hidden_state, cell_state) = self(inputs)
+        if np.random.randint(len(q_values)) < epsilon:
+            action = np.random.randint(len(q_values))
+        else:
+            action = argmax(q_values).item()
+        
+        return action, q_values[0][action], (hidden_state, cell_state)
