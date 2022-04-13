@@ -5,3 +5,16 @@ INFO:root:Time: Fri Apr  8 19:49:30 2022 Step: 0 Reward: 5.734999999999999
 INFO:root:Time: Fri Apr  8 19:49:58 2022 Step: 0 Reward: -32.669999999999504
 INFO:root:Time: Fri Apr  8 19:50:00 2022 Step: 0 Reward: 15.285000000000007
 INFO:root:Time: Fri Apr  8 19:50:02 2022 Step: 0 Reward: 15.285000000000007
+INFO:root:Time: Wed Apr 13 17:12:54 2022 Step: 0 Reward: 9.0
+INFO:root:Time: Wed Apr 13 17:13:04 2022 Step: 46491 Reward: 10.0
+INFO:root:Time: Wed Apr 13 17:13:14 2022 Step: 107294 Reward: 40.0
+INFO:root:Time: Wed Apr 13 17:13:24 2022 Step: 170381 Reward: 84.0
+INFO:root:Time: Wed Apr 13 17:13:34 2022 Step: 233074 Reward: 188.0
+INFO:root:Time: Wed Apr 13 18:32:05 2022 Step: 0 Reward: 80.0
+INFO:root:Time: Wed Apr 13 18:32:15 2022 Step: 68190 Reward: 80.0
+INFO:root:Time: Wed Apr 13 18:32:25 2022 Step: 136802 Reward: 105.0
+INFO:root:Time: Wed Apr 13 18:32:35 2022 Step: 206257 Reward: 183.0
+INFO:root:Time: Wed Apr 13 18:32:45 2022 Step: 275199 Reward: 200.0
+INFO:root:Time: Wed Apr 13 18:32:55 2022 Step: 344496 Reward: 200.0
+INFO:root:Time: Wed Apr 13 18:33:05 2022 Step: 414278 Reward: 200.0
+INFO:root:Time: Wed Apr 13 18:33:15 2022 Step: 483304 Reward: 183.0

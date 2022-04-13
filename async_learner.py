@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 import numpy as np
 
-from  models import ActorCriticNN, CartPoleActorCriticNN
+from  models import ActorCriticNN, CartPoleActorCriticNN, QLearningNN, CartPoleQLearningNN
 from environment import generate_env
 from shared_optimization import copy_learner_grads
 
@@ -11,6 +11,7 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamm
     env = generate_env()
     torch.manual_seed(1 + pnum)
     model = CartPoleActorCriticNN(env.observation_space.shape, env.action_space.n)
+    optimizer = torch.optim.Adam(target_model.parameters(), lr=1e-3)
     model.train()
     
     done = True
@@ -79,29 +80,33 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
     env = generate_env()
     torch.manual_seed(1 + pnum)
     
+    process_model = CartPoleQLearningNN(env.observation_space.shape, env.action_space.n)
+    optimizer = torch.optim.Adam(behavioral_model.parameters(), lr=1e-3)
+
     done = True
     loss = torch.zeros(1, 1)
     while(T.data < Tmax):
-        cur_state = env.reset()
-        cur_state = torch.tensor([cur_state.__array__().tolist()])
-
         if done:
             cell_state = torch.zeros(1, 256)
             hidden_state = torch.zeros(1, 256)
+            cur_state = env.reset()
+            cur_state = torch.tensor([cur_state.__array__().tolist()])
         else:
             cell_state = cell_state.detach()
             hidden_state = hidden_state.detach()
+            cur_state = torch.tensor([cur_state.__array__().tolist()])
         for step in range(max_steps):
-            action, q_value, (cell_state, hidden_state) = behavioral_model.act((cur_state, (hidden_state, cell_state)), epsilon)
+            action, q_value, (cell_state, hidden_state) = process_model.act((cur_state, (hidden_state, cell_state)), epsilon)
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
             reward = max(min(reward, 50), -5)
+            #print(reward)
             if not done:
                 _, target_q_value, _ = target_model.act((cur_state, (hidden_state, cell_state)), epsilon=0)
-                reward += gamma * target_q_value.detach()
-
-            loss = loss + (reward - q_value) * (reward - q_value)
+                reward = reward + gamma * target_q_value.data
+            #print(reward)
+            loss = loss + 0.5 * (reward - q_value).pow(2)
 
             with Tlock:
                 T += 1
@@ -111,11 +116,15 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
 
             if done:
                 break
-        behavioral_model.zero_grad()
+            #print(loss)
+        
         optimizer.zero_grad()
+        process_model.zero_grad()
         loss.backward()
+        copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
         loss = torch.zeros(1, 1)
+        process_model.load_state_dict(behavioral_model.state_dict())
         
         epsilon = max(epsilon * epsilon_decay, 0.1)
 
@@ -132,6 +141,8 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
         if done:
             cell_state = torch.zeros(1, 256)
             hidden_state = torch.zeros(1, 256)
+            cur_state = env.reset()
+            cur_state = torch.tensor([cur_state.__array__().tolist()])
         else:
             cell_state = cell_state.detach()
             hidden_state = hidden_state.detach()
@@ -162,7 +173,7 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
             R = target_q_value.detach()
         for i in reversed(range(len(rewards))):
             R = rewards[i] + gamma * R
-            loss = loss + (R - q_value) * (R - q_value)
+            loss = loss + (R - q_value).pow(2)
 
         optimizer.zero_grad()
         loss.backward()

@@ -211,7 +211,8 @@ class CartPoleQLearningNN(nn.Module):
         # Based on https://blog.gofynd.com/building-a-deep-q-network-in-pytorch-fa1086aa5435
         self.linear1 = nn.Linear(c, 64)
         self.linear2 = nn.Linear(64, output_dim)
-        self.apply(self.init_weights)
+        self.output_dim = output_dim
+        #self.apply(self.init_weights)
 
     def forward(self, inputs):
         x0, *_ = inputs
@@ -222,9 +223,11 @@ class CartPoleQLearningNN(nn.Module):
 
     def act(self, inputs, epsilon=0):
         q_values, (hidden_state, cell_state) = self(inputs)
-        if np.random.randint(len(q_values)) < epsilon:
-            action = np.random.randint(len(q_values))
+        q_values = torch.reshape(q_values, (1, 2))
+        #print(q_values)
+        if torch.rand(1).item() < epsilon:
+            action = torch.randint(0, self.output_dim, (1,)).item()
         else:
             action = argmax(q_values).item()
-        
-        return action, q_values[0][action], (hidden_state, cell_state)
+            
+        return action, q_values.gather(-1, torch.tensor([[action]])), (hidden_state, cell_state)
