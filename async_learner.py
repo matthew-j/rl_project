@@ -80,7 +80,7 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
     env = generate_env()
     torch.manual_seed(1 + pnum)
     
-    process_model = CartPoleQLearningNN(env.observation_space.shape, env.action_space.n)
+    #process_model = CartPoleQLearningNN(env.observation_space.shape, env.action_space.n)
     optimizer = torch.optim.Adam(behavioral_model.parameters(), lr=1e-3)
 
     done = True
@@ -96,7 +96,7 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
             hidden_state = hidden_state.detach()
             cur_state = torch.tensor([cur_state.__array__().tolist()])
         for step in range(max_steps):
-            action, q_value, (cell_state, hidden_state) = process_model.act((cur_state, (hidden_state, cell_state)), epsilon)
+            action, q_value, (cell_state, hidden_state) = behavioral_model.act((cur_state, (hidden_state, cell_state)), epsilon)
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
@@ -119,12 +119,12 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
             #print(loss)
         
         optimizer.zero_grad()
-        process_model.zero_grad()
+        #process_model.zero_grad()
         loss.backward()
-        copy_learner_grads(process_model, behavioral_model)
+        #copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
         loss = torch.zeros(1, 1)
-        process_model.load_state_dict(behavioral_model.state_dict())
+        #process_model.load_state_dict(behavioral_model.state_dict())
         
         epsilon = max(epsilon * epsilon_decay, 0.1)
 
