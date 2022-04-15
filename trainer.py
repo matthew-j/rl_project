@@ -88,9 +88,9 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     )
     processes.append(p)
     p.start()
-
     for i in range(0, num_processes):
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.999, 0.9, 5000, optimizer))
+        eps =  max(min(i + 1 / num_processes, 1), .1)
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 200, eps, 0.99, 0.9, 500, 1e-3))
         p.start()
         processes.append(p)
 
@@ -122,7 +122,8 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     p.start()
 
     for i in range(0, num_processes):
-        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, 1, 0.99, 0.9, 500, optimizer))
+        eps =  max(min(i + 1 / num_processes, 1), .1)
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.99, 0.9, 500, 1e-3))
         p.start()
         processes.append(p)
 

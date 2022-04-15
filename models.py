@@ -99,6 +99,8 @@ class QLearningNN(nn.Module):
         self.q_linear = nn.Linear(256, output_dim)
         self.apply(self.init_weights)
 
+        self.output_dim = output_dim
+
     def forward(self, inputs):
         x0, (hidden_state, cell_state) = inputs
         x1 = F.relu(self.conv1(x0))
@@ -114,12 +116,12 @@ class QLearningNN(nn.Module):
 
     def act(self, inputs, epsilon=.1):
         q_values, (hidden_state, cell_state) = self(inputs)
-        if np.random.randint(len(q_values)) < epsilon:
-            action = np.random.randint(len(q_values))
+        if torch.rand(1).item() < epsilon:
+            action = torch.randint(0, self.output_dim, (1,)).item()
         else:
             action = argmax(q_values).item()
-        
-        return action, q_values[0][action], (hidden_state, cell_state)
+            
+        return action, q_values.gather(-1, torch.tensor([[action]])), (hidden_state, cell_state)
 
 
 class ActorCriticNN4Layer(nn.Module):

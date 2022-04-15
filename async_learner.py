@@ -57,7 +57,7 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamm
         R = torch.zeros(1,1)
         advantage_estimation = torch.zeros(1,1)
         if not done:
-            q_values, state_value, (cell_state, hidden_state) = model((cur_state, (hidden_state, cell_state)))
+            q_values, state_value, (hidden_state, cell_state) = model((cur_state, (hidden_state, cell_state)))
             R = state_value.data
 
         q_loss = 0
@@ -77,31 +77,42 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamm
         copy_learner_grads(model, target_model)
         optimizer.step()
 
-def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, epsilon, epsilon_decay, gamma, I_target, optimizer):
+def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, epsilon, epsilon_decay, gamma, I_target, lr):
     env = generate_env()
     torch.manual_seed(1 + pnum)
+
     done = True
     loss = torch.zeros(1, 1)
+    optimizer = torch.optim.Adam(behavioral_model.parameters(), lr=lr)
     while(T.data < Tmax):
         if done:
             cur_state = env.reset()
             cur_state = torch.tensor([cur_state.__array__().tolist()])
-            cell_state = torch.zeros(1, 256)
-            hidden_state = torch.zeros(1, 256)
+            cell_state_behavior = torch.zeros(1, 256)
+            hidden_state_behavior = torch.zeros(1, 256)
+            cell_state_target = torch.zeros(1, 256)
+            hidden_state_target = torch.zeros(1, 256)
         else:
-            cell_state = cell_state.detach()
-            hidden_state = hidden_state.detach()
+            cell_state_behavior = cell_state_behavior.detach()
+            hidden_state_behavior = hidden_state_behavior.detach()
+            cell_state_target = cell_state_target.detach()
+            hidden_state_target = hidden_state_target.detach()
+        
         for step in range(max_steps):
-            action, q_value, (cell_state, hidden_state) = behavioral_model.act((cur_state, (hidden_state, cell_state)), epsilon)
+            action, q_value, (hidden_state_behavior, cell_state_behavior) = behavioral_model.act(
+                (cur_state, (hidden_state_behavior, cell_state_behavior)), epsilon
+            )
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
             reward = max(min(reward, 50), -5)
             if not done:
-                _, target_q_value, _ = target_model.act((cur_state, (hidden_state, cell_state)), epsilon=0)
-                reward += gamma * target_q_value.data
+                _, target_q_value, (hidden_state_target, cell_state_target) = target_model.act(
+                    (cur_state, (hidden_state_target, cell_state_target)), epsilon=0
+                )
+                reward = reward + gamma * target_q_value.data
 
-            loss = loss + (reward - q_value).pow(2)
+            loss = loss + .5 * (reward - q_value).pow(2)
 
             with Tlock:
                 T += 1
@@ -111,36 +122,43 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
 
             if done:
                 break
-        behavioral_model.zero_grad()
+
         optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(behavioral_model.parameters(), 250)
         optimizer.step()
         loss = torch.zeros(1, 1)
         
         epsilon = max(epsilon * epsilon_decay, 0.1)
 
-def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, epsilon, epsilon_decay, gamma, I_target, optimizer):
+def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, epsilon, epsilon_decay, gamma, I_target, lr):
     env = generate_env()
     torch.manual_seed(1 + pnum)
     
     done = True
     loss = torch.zeros(1, 1)
+    optimizer = torch.optim.Adam(behavioral_model.parameters(), lr=lr)
     while(T.data < Tmax):
         if done:
             cur_state = env.reset()
             cur_state = torch.tensor([cur_state.__array__().tolist()])
-            cell_state = torch.zeros(1, 256)
-            hidden_state = torch.zeros(1, 256)
+            cell_state_behavior = torch.zeros(1, 256)
+            hidden_state_behavior = torch.zeros(1, 256)
+            cell_state_target = torch.zeros(1, 256)
+            hidden_state_target = torch.zeros(1, 256)
         else:
-            cell_state = cell_state.detach()
-            hidden_state = hidden_state.detach()
+            cell_state_behavior = cell_state_behavior.detach()
+            hidden_state_behavior = hidden_state_behavior.detach()
+            cell_state_target = cell_state_target.detach()
+            hidden_state_target = hidden_state_target.detach()
 
         rewards = []
         state_action_values = []
 
         for step in range(max_steps):
-            action, q_value, (cell_state, hidden_state) = behavioral_model.act((cur_state, (hidden_state, cell_state)), epsilon)
-
+            action, q_value, (hidden_state_behavior, cell_state_behavior) = behavioral_model.act(
+                (cur_state, (hidden_state_behavior, cell_state_behavior)), epsilon
+            )
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
             rewards.append(max(min(reward, 50), -5))
@@ -157,14 +175,17 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
 
         R = torch.zeros(1, 1)
         if not done:
-            _, target_q_value, _ = target_model.act((cur_state, (hidden_state, cell_state)), epsilon=0)
-            R = target_q_value.data
+            _, target_q_value, (hidden_state_target, cell_state_target) = target_model.act(
+                (cur_state, (hidden_state_target, cell_state_target)), epsilon=0
+            )
+            reward = reward + gamma * target_q_value.data
         for i in reversed(range(len(rewards))):
             R = rewards[i] + gamma * R
-            loss = loss + (R - q_value).pow(2)
+            loss = loss + 0.5 * (R - q_value).pow(2)
 
         optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(behavioral_model.parameters(), 250)
         optimizer.step()
         loss = torch.zeros(1, 1)
         

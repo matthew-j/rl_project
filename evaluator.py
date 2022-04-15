@@ -45,4 +45,4 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
         savecnt += 1
         if savecnt % 8 == 0:
             torch.save(eval_model.state_dict(), f"saves/{algorithm_name}{step_num}.pt")
-        time.sleep(30)
+        time.sleep(60)
