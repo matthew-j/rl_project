@@ -158,8 +158,10 @@ class NormalizedEnv(gym.ObservationWrapper):
         
         else:
             return observation
+def generate_env():
+    return gym.make("LunarLander-v2")
 
-def generate_env(actions= [
+def generate_env_mario(actions= [
         ['right'],
         ['right', 'A'],
         ['right', 'B'],

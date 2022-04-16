@@ -3,7 +3,7 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 import numpy as np
 
-from  models import ActorCriticNN, QLearningNN
+from  models import ActorCriticNN, QLearningNN, LunarLanderNN
 from environment import generate_env
 from shared_optimization import copy_learner_grads
 
@@ -143,7 +143,7 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
     
     done = True
     optimizer = torch.optim.Adam(behavioral_model.parameters(), lr=lr)
-    process_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    process_model = LunarLanderNN(env.observation_space.shape, env.action_space.n)
 
     while(T.data < Tmax):
         process_model.load_state_dict(behavioral_model.state_dict())

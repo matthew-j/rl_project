@@ -171,3 +171,37 @@ class ActorCriticNN4Layer(nn.Module):
         action = argmax(q_values).item()
 
         return action, q_values[0][action], (hidden_state, cell_state)
+
+class LunarLanderNN(nn.Module):
+    def init_weights(self, m):
+        if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+            torch.nn.init.xavier_uniform_(m.weight)
+            m.bias.data.fill_(0)
+    
+    def __init__(self, input_dim, output_dim):
+        super().__init__()
+        c, *_ = input_dim
+
+        # Based on https://blog.gofynd.com/building-a-deep-q-network-in-pytorch-fa1086aa5435
+        self.linear1 = nn.Linear(c, 64)
+        self.linear2 = nn.Linear(64, output_dim)
+        self.output_dim = output_dim
+        self.apply(self.init_weights)
+
+    def forward(self, inputs):
+        x0, *_ = inputs
+        x1 = torch.tanh(self.linear1(x0))
+        outputs = self.linear2(x1)
+
+        return outputs, (torch.tensor([]), torch.tensor([]))
+
+    def act(self, inputs, epsilon=0):
+        q_values, (hidden_state, cell_state) = self(inputs)
+        #q_values = torch.reshape(q_values, (1, 2))
+        #print(q_values)
+        if torch.rand(1).item() < epsilon:
+            action = torch.randint(0, self.output_dim, (1,)).item()
+        else:
+            action = argmax(q_values).item()
+            
+        return action, q_values.gather(-1, torch.tensor([[action]])), (hidden_state, cell_state)

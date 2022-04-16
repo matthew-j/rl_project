@@ -7,7 +7,7 @@ from torch.distributions import Categorical
 
 from evaluator import evaluate
 from async_learner import a3c_learner, q_learner, nstep_q_learner
-from models import ActorCriticNN, QLearningNN
+from models import ActorCriticNN, QLearningNN, LunarLanderNN
 from environment import generate_env
 from shared_optimization import SharedAdam
 
@@ -97,8 +97,8 @@ def train_qlearning(num_processes, Tmax, render, model_file):
 
 def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     env = generate_env()
-    target_model = QLearningNN(env.observation_space.shape, env.action_space.n)
-    behavioral_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    target_model = LunarLanderNN(env.observation_space.shape, env.action_space.n)
+    behavioral_model = LunarLanderNN(env.observation_space.shape, env.action_space.n)
     target_model.share_memory()
     behavioral_model.share_memory()
 
@@ -111,7 +111,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     
     processes = []
     p = mp.Process(target = evaluate, 
-        args = ("nqlearn", target_model, QLearningNN(env.observation_space.shape, env.action_space.n), 
+        args = ("nqlearn", target_model, LunarLanderNN(env.observation_space.shape, env.action_space.n), 
         T, Tmax, render)
     )
     processes.append(p)
