@@ -18,7 +18,7 @@ parser.add_argument('algorithm', metavar='a', type=str,
 parser.add_argument('--processes', metavar='p', type=int, 
                     help='number of processes to train with', default=4)
 parser.add_argument('--tmax', metavar='t', type=int, 
-                    help='number of steps to run', default=5000000)
+                    help='number of steps to run', default=10000000)
 parser.add_argument('--render', metavar='r', type=bool, 
                     help='whether to render mario', default=False)
 parser.add_argument('--model_file', metavar='m', type=str, 
@@ -75,8 +75,6 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     if model_file is not None:
         target_model.load_state_dict(model_file)
 
-    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
-
     T = torch.tensor(0)
     T.share_memory_()
     Tlock = mp.Lock()
@@ -90,7 +88,7 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     p.start()
     for i in range(0, num_processes):
         eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 200, eps, 0.99, 0.9, 500, 1e-3))
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.9997, 0.9, 500, 1e-3))
         p.start()
         processes.append(p)
 
@@ -107,8 +105,6 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     if model_file is not None:
         target_model.load_state_dict(model_file)
 
-    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
-
     T = torch.tensor(0)
     T.share_memory_()
     Tlock = mp.Lock()
@@ -123,7 +119,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
 
     for i in range(0, num_processes):
         eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.99, 0.9, 500, 1e-3))
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.9997, 0.9, 500, 1e-3))
         p.start()
         processes.append(p)
 
