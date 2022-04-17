@@ -88,7 +88,7 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     p.start()
     for i in range(0, num_processes):
         eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.9997, 0.9, 500, 1e-4))
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.9997, 0.99, 500, 1e-4))
         p.start()
         processes.append(p)
 
@@ -101,6 +101,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     behavioral_model = QLearningNN(env.observation_space.shape, env.action_space.n)
     target_model.share_memory()
     behavioral_model.share_memory()
+    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
 
     if model_file is not None:
         target_model.load_state_dict(model_file)
@@ -118,8 +119,8 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     p.start()
 
     for i in range(0, num_processes):
-        eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.9997, 0.9, 500, 1e-4))
+        #eps =  max(min(i + 1 / num_processes, 1), .1)
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, sample_action, 0.9, 500, optimizer))
         p.start()
         processes.append(p)
 
