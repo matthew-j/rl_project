@@ -112,7 +112,7 @@ def train_qlearning(num_processes, Tmax, render, model_file):
             policy = SampleActions()
         else:
             policy = PickBestAction()
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.99, 500, optimizer))
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.99, 100, optimizer))
         p.start()
         processes.append(p)
 
@@ -147,7 +147,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
             policy = SampleActions()
         else:
             policy = PickBestAction()
-        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.9, 500, optimizer))
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.9, 100, optimizer))
         p.start()
         processes.append(p)
 

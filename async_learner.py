@@ -12,25 +12,24 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
     torch.manual_seed(1 + pnum)
     model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
     model.train()
-    
     done = True
+    
     while(T.data < Tmax):
-        if done:
-            cur_state = env.reset()
-            cur_state = torch.tensor([cur_state.__array__().tolist()])
         model.load_state_dict(target_model.state_dict())
-
-        if done:
-            cell_state = torch.zeros(1, 256)
-            hidden_state = torch.zeros(1, 256)
-        else:
-            cell_state = cell_state.detach()
-            hidden_state = hidden_state.detach()
 
         state_values = []
         log_probs = []
         rewards = []
         entropy = []
+
+        if done:
+            cur_state = env.reset()
+            cur_state = torch.tensor([cur_state.__array__().tolist()])
+            cell_state = torch.zeros(1, 256)
+            hidden_state = torch.zeros(1, 256)
+        else:
+            cell_state = cell_state.detach()
+            hidden_state = hidden_state.detach()
 
         for step in range(max_steps):
             q_values, state_value, (cell_state, hidden_state) = model((cur_state, (hidden_state, cell_state)))
@@ -73,7 +72,6 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
         total_loss = q_loss + .5 * v_loss
         total_loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 250)
-
         copy_learner_grads(model, target_model)
         optimizer.step()
 
@@ -94,13 +92,9 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, l
             cur_state = torch.tensor([cur_state.__array__().tolist()])
             cell_state_process = torch.zeros(1, 256)
             hidden_state_process = torch.zeros(1, 256)
-            cell_state_target = torch.zeros(1, 256)
-            hidden_state_target = torch.zeros(1, 256)
         else:
             cell_state_process = cell_state_process.detach()
             hidden_state_process = hidden_state_process.detach()
-            cell_state_target = cell_state_target.detach()
-            hidden_state_target = hidden_state_target.detach()
         
         for step in range(max_steps):
             q_values, (hidden_state_process, cell_state_process) = process_model(
@@ -116,8 +110,8 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, l
             q_value  = q_values.gather(-1, torch.tensor([[action]]))
 
             if not done:
-                _, target_q_value, (hidden_state_target, cell_state_target) = target_model.act(
-                    (cur_state, (hidden_state_target, cell_state_target)), epsilon=0
+                _, target_q_value, _ = target_model.act(
+                    (cur_state, (hidden_state_process, cell_state_process)), epsilon=0
                 )
                 reward = reward + gamma * target_q_value.data
 
@@ -128,8 +122,6 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, l
 
             if T % I_target == 0:
                 target_model.load_state_dict(behavioral_model.state_dict())
-                cell_state_target = torch.zeros(1, 256)
-                hidden_state_target = torch.zeros(1, 256)
 
             if done:
                 break
@@ -137,7 +129,7 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, l
         optimizer.zero_grad()
         process_model.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(behavioral_model.parameters(), 250)
+        torch.nn.utils.clip_grad_norm_(process_model.parameters(), 250)
         copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
 
@@ -199,7 +191,7 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
         optimizer.zero_grad()
         process_model.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(behavioral_model.parameters(), 250)
+        torch.nn.utils.clip_grad_norm_(process_model.parameters(), 250)
         copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
     
