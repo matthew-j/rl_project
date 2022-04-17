@@ -18,7 +18,7 @@ parser.add_argument('algorithm', metavar='a', type=str,
 parser.add_argument('--processes', metavar='p', type=int, 
                     help='number of processes to train with', default=4)
 parser.add_argument('--tmax', metavar='t', type=int, 
-                    help='number of steps to run', default=10000000)
+                    help='number of steps to run', default=4000000)
 parser.add_argument('--render', metavar='r', type=bool, 
                     help='whether to render mario', default=False)
 parser.add_argument('--model_file', metavar='m', type=str, 
