@@ -24,13 +24,16 @@ parser.add_argument('--render', metavar='r', type=bool,
 parser.add_argument('--model_file', metavar='m', type=str, 
                     help='model file to train with', default=None)
 
-## Functions for learners to pick action
-def sample_action(action_values):
-    dist = Categorical(action_values)
-    return dist.sample().item()
+## Policies for learners to pick action
 
-def argmax_action(action_values):
-    return argmax(action_values).item()
+class SampleActions():
+    def get_action(self, action_values):
+        dist = Categorical(action_values)
+        return dist.sample().item()
+
+class PickBestAction():
+    def get_action(self, action_values):
+        return argmax(action_values).item()
 
 def train_a3c(num_processes, Tmax, render, model_file):
     env = generate_env()
@@ -56,9 +59,9 @@ def train_a3c(num_processes, Tmax, render, model_file):
 
     for i in range(0, num_processes):
         if i < num_processes // 2:
-            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, sample_action, .9, .01, optimizer))
+            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, SampleActions(), .9, .01, optimizer))
         else:
-            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, argmax_action, .9, .01, optimizer))
+            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, PickBestAction(), .9, .01, optimizer))
         p.start()
         processes.append(p)
 
@@ -120,7 +123,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
 
     for i in range(0, num_processes):
         #eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, sample_action, 0.9, 500, optimizer))
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, SampleActions(), 0.9, 500, optimizer))
         p.start()
         processes.append(p)
 

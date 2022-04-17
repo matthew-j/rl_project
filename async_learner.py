@@ -7,7 +7,7 @@ from  models import ActorCriticNN, QLearningNN
 from environment import generate_env
 from shared_optimization import copy_learner_grads
 
-def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamma, beta, optimizer):
+def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, beta, optimizer):
     env = generate_env()
     torch.manual_seed(1 + pnum)
     model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
@@ -36,7 +36,7 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, action_func, gamm
             q_values, state_value, (cell_state, hidden_state) = model((cur_state, (hidden_state, cell_state)))
             action_probs = F.softmax(q_values, dim=-1)
             action_log_probs = F.log_softmax(q_values, dim=-1)
-            action = action_func(action_probs)
+            action = learner_policy.get_action(action_probs)
 
             next_state, reward, done, _ = env.step(action)
             reward = max(min(reward, 50), -5)
@@ -137,7 +137,7 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
         
         epsilon = max(epsilon * epsilon_decay, 0.1)
 
-def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, action_func, gamma, I_target, optimizer):
+def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer):
     env = generate_env()
     torch.manual_seed(1 + pnum)
     
@@ -165,7 +165,7 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
                 (cur_state, (hidden_state_process, cell_state_process))
             )
             action_probs = F.softmax(q_values, dim=-1)
-            action = action_func(action_probs)
+            action = learner_policy.get_action(action_probs)
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
