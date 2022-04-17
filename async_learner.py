@@ -77,13 +77,14 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
         copy_learner_grads(model, target_model)
         optimizer.step()
 
-def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, epsilon, epsilon_decay, gamma, I_target, lr):
+def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer):
     env = generate_env()
     torch.manual_seed(1 + pnum)
 
     done = True
-    optimizer = torch.optim.Adam(behavioral_model.parameters(), lr=lr)
     process_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    process_model.train()
+
     while(T.data < Tmax):
         process_model.load_state_dict(behavioral_model.state_dict())
         loss = torch.zeros(1, 1)
@@ -102,13 +103,18 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
             hidden_state_target = hidden_state_target.detach()
         
         for step in range(max_steps):
-            action, q_value, (hidden_state_process, cell_state_process) = process_model.act(
-                (cur_state, (hidden_state_process, cell_state_process)), epsilon
+            q_values, (hidden_state_process, cell_state_process) = process_model(
+                (cur_state, (hidden_state_process, cell_state_process))
             )
+            action_probs = F.softmax(q_values, dim=-1)
+            action = learner_policy.get_action(action_probs)
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
             reward = max(min(reward, 50), -5)
+
+            q_value  = q_values.gather(-1, torch.tensor([[action]]))
+
             if not done:
                 _, target_q_value, (hidden_state_target, cell_state_target) = target_model.act(
                     (cur_state, (hidden_state_target, cell_state_target)), epsilon=0
@@ -131,11 +137,9 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, e
         optimizer.zero_grad()
         process_model.zero_grad()
         loss.backward()
-        #torch.nn.utils.clip_grad_norm_(behavioral_model.parameters(), 250)
+        torch.nn.utils.clip_grad_norm_(behavioral_model.parameters(), 250)
         copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
-        
-        epsilon = max(epsilon * epsilon_decay, 0.1)
 
 def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer):
     env = generate_env()
@@ -143,6 +147,7 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
     
     done = True
     process_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    process_model.train()
 
     while(T.data < Tmax):
         process_model.load_state_dict(behavioral_model.state_dict())

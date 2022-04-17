@@ -35,6 +35,22 @@ class PickBestAction():
     def get_action(self, action_values):
         return argmax(action_values).item()
 
+class EpsilonGreedy():
+    def init(self, epsilon = 1, epsilon_decay = 0.9997, epsilon_min = 0.1):
+        self.epsilon = epsilon
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = epsilon_min
+    
+    def get_action(self, action_values):
+        if torch.rand(1).item() < self.epsilon:
+            action = torch.randint(0, len(action_values[-1]), (1,)).item()
+        else:
+            action = argmax(action_values).item()
+            
+        self.epsilon = max(self.epsilon * self.epsilon_decay, self.epsilon_min)
+        return action
+
+
 def train_a3c(num_processes, Tmax, render, model_file):
     env = generate_env()
     target_model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
@@ -59,9 +75,10 @@ def train_a3c(num_processes, Tmax, render, model_file):
 
     for i in range(0, num_processes):
         if i < num_processes // 2:
-            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, SampleActions(), .9, .01, optimizer))
+            policy = SampleActions()
         else:
-            p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, PickBestAction(), .9, .01, optimizer))
+            policy = PickBestAction()
+        p = mp.Process(target = a3c_learner, args = (i, target_model, Tlock, Tmax, T, 50, policy, .9, .01, optimizer))
         p.start()
         processes.append(p)
 
@@ -74,6 +91,7 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     behavioral_model = QLearningNN(env.observation_space.shape, env.action_space.n)
     target_model.share_memory()
     behavioral_model.share_memory()
+    optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
 
     if model_file is not None:
         target_model.load_state_dict(model_file)
@@ -90,8 +108,11 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     processes.append(p)
     p.start()
     for i in range(0, num_processes):
-        eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, eps, 0.9997, 0.99, 500, 1e-4))
+        if i < num_processes // 2:
+            policy = SampleActions()
+        else:
+            policy = PickBestAction()
+        p = mp.Process(target=q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.99, 500, optimizer))
         p.start()
         processes.append(p)
 
@@ -122,8 +143,11 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     p.start()
 
     for i in range(0, num_processes):
-        #eps =  max(min(i + 1 / num_processes, 1), .1)
-        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, SampleActions(), 0.9, 500, optimizer))
+        if i < num_processes // 2:
+            policy = SampleActions()
+        else:
+            policy = PickBestAction()
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.9, 500, optimizer))
         p.start()
         processes.append(p)
 
