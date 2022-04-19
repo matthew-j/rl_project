@@ -55,34 +55,32 @@ class ResizeObservation(gym.ObservationWrapper):
 
         return observation
 
-class NoopResetEnv(gym.Wrapper):
-    def __init__(self, env, noop_max=30):
-        """Sample initial states by taking random number of no-ops on reset.
-        No-op is assumed to be action 0.
-        """
-        gym.Wrapper.__init__(self, env)
-        self.noop_max = noop_max
-        self.override_num_noops = None
-        self.noop_action = 0
-        assert env.unwrapped.get_action_meanings()[0] == 'NOOP'
-
-    def reset(self, **kwargs):
-        """ Do no-op action for a number of steps in [1, noop_max]."""
-        self.env.reset(**kwargs)
-        if self.override_num_noops is not None:
-            noops = self.override_num_noops
-        else:
-            noops = self.unwrapped.np_random.randint(1, self.noop_max + 1) #pylint: disable=E1101
-        assert noops > 0
-        obs = None
-        for _ in range(noops):
-            obs, _, done, _ = self.env.step(self.noop_action)
-            if done:
-                obs = self.env.reset(**kwargs)
-        return obs
-
     def step(self, ac):
         return self.env.step(ac)
+
+class NormalizedEnv(gym.ObservationWrapper):
+    def __init__(self, env=None):
+        super(NormalizedEnv, self).__init__(env)
+        self.state_mean = 0
+        self.state_std = 0
+        self.alpha = 0.9999
+        self.num_steps = 0
+
+    def observation(self, observation):
+        if observation is not None:    # for future meta implementation
+            self.num_steps += 1
+            self.state_mean = self.state_mean * self.alpha + \
+                observation.mean() * (1 - self.alpha)
+            self.state_std = self.state_std * self.alpha + \
+                observation.std() * (1 - self.alpha)
+
+            unbiased_mean = self.state_mean / (1 - pow(self.alpha, self.num_steps))
+            unbiased_std = self.state_std / (1 - pow(self.alpha, self.num_steps))
+
+            return (observation - unbiased_mean) / (unbiased_std + 1e-8)
+
+        else:
+            return observation
 
 class CustomReward(gym.Wrapper):
     def __init__(self, env=None):
@@ -176,6 +174,7 @@ def generate_env(actions= RIGHT_ONLY, skip_num=4, frame_stack=4):
     env = JoypadSpace(env, actions)
     env = GrayScale(env)
     env = ResizeObservation(env, shape=84)
+    env = NormalizedEnv(env)
     env = CustomReward(env)
     env = FrameStack(env, num_stack=frame_stack)
     env = SkipFrames(env, skip=skip_num)
