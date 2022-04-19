@@ -1,7 +1,5 @@
 import torch
 import torch.nn.functional as F
-from torch.distributions import Categorical
-import numpy as np
 
 from  models import ActorCriticNN, QLearningNN
 from environment import generate_env
@@ -195,3 +193,116 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
         copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
     
+def sarsa_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, optimizer):
+    env = generate_env()
+    torch.manual_seed(1 + pnum)
+
+    done = True
+    process_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    process_model.train()
+
+    while(T.data < Tmax):
+        process_model.load_state_dict(target_model.state_dict())
+        loss = torch.zeros(1, 1)
+
+        if done:
+            cur_state = env.reset()
+            cur_state = torch.tensor([cur_state.__array__().tolist()])
+            cell_state_process = torch.zeros(1, 256)
+            hidden_state_process = torch.zeros(1, 256)
+        else:
+            cell_state_process = cell_state_process.detach()
+            hidden_state_process = hidden_state_process.detach()
+        
+        for step in range(max_steps):
+            q_values, (hidden_state_process, cell_state_process) = process_model(
+                (cur_state, (hidden_state_process, cell_state_process))
+            )
+            action_probs = F.softmax(q_values, dim=-1)
+            action = learner_policy.get_action(action_probs)
+
+            next_state, reward, done, info = env.step(action)
+            cur_state = torch.tensor([next_state.__array__().tolist()])
+            reward = max(min(reward, 50), -5)
+
+            q_value  = q_values.gather(-1, torch.tensor([[action]]))
+
+            if not done:
+                _, target_q_value, _ = process_model.act(
+                    (cur_state, (hidden_state_process, cell_state_process)), epsilon=0
+                )
+                reward = reward + gamma * target_q_value.data
+
+            loss = loss + .5 * (reward - q_value).pow(2)
+
+            with Tlock:
+                T += 1
+
+            if done:
+                break
+
+        optimizer.zero_grad()
+        process_model.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(process_model.parameters(), 250)
+        copy_learner_grads(process_model, target_model)
+        optimizer.step()
+
+def nstep_sarsa_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, optimizer):
+    env = generate_env()
+    torch.manual_seed(1 + pnum)
+    
+    done = True
+    process_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    process_model.train()
+
+    while(T.data < Tmax):
+        process_model.load_state_dict(target_model.state_dict())
+        loss = torch.zeros(1, 1)
+
+        if done:
+            cur_state = env.reset()
+            cur_state = torch.tensor([cur_state.__array__().tolist()])
+            cell_state_process = torch.zeros(1, 256)
+            hidden_state_process = torch.zeros(1, 256)
+        else:
+            cell_state_process = cell_state_process.detach()
+            hidden_state_process = hidden_state_process.detach()
+
+        rewards = []
+        state_action_values = []
+
+        for step in range(max_steps):
+            q_values, (hidden_state_process, cell_state_process) = process_model(
+                (cur_state, (hidden_state_process, cell_state_process))
+            )
+            action_probs = F.softmax(q_values, dim=-1)
+            action = learner_policy.get_action(action_probs)
+
+            next_state, reward, done, info = env.step(action)
+            cur_state = torch.tensor([next_state.__array__().tolist()])
+            rewards.append(max(min(reward, 50), -5))
+            state_action_values.append(q_values.gather(-1, torch.tensor([[action]])))
+
+            with Tlock:
+                T += 1
+
+            if done:
+                break
+
+        R = torch.zeros(1, 1)
+        if not done:
+            _, target_q_value, _ = process_model.act(
+                (cur_state, (hidden_state_process, cell_state_process)), epsilon=0
+            )
+            R = target_q_value.data
+        for i in reversed(range(len(rewards))):
+            R = rewards[i] + gamma * R
+            loss = loss + 0.5 * (R - state_action_values[i]).pow(2)
+
+        optimizer.zero_grad()
+        process_model.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(process_model.parameters(), 250)
+        copy_learner_grads(process_model, target_model)
+        optimizer.step()

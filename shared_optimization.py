@@ -58,20 +58,6 @@ class SharedAdam(torch.optim.Adam):
 
         return loss
 
-class SharedRMSProp(torch.optim.RMSprop):
-    def __init__(self, params, lr=1e-2, momentum=0, alpha=0.99, eps=1e-8, centered=True, weight_decay=0):
-        super(SharedRMSProp, self).__init__(params, lr, momentum, alpha, eps, centered, weight_decay)
-
-        for group in self.param_groups:
-            for p in group['params']:
-                state = self.state[p]
-                state['step'] = torch.zeros(1)
-                state['square_avg'] = torch.zeros_like(p.data)
-                
-                state['step'].share_memory_()
-                state['square_avg'].share_memory_()
-
-
 def copy_learner_grads(learner_model, target_model):
     for param, shared_param in zip(learner_model.parameters(),
                                    target_model.parameters()):

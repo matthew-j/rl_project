@@ -135,41 +135,47 @@ class CustomReward(gym.Wrapper):
     def change_level(self, level):
         self.env.change_level(level)
 
-class NormalizedEnv(gym.ObservationWrapper):
-    def __init__(self, env=None):
-        super(NormalizedEnv, self).__init__(env)
-        self.state_mean = 0
-        self.state_std = 0
-        self.alpha = 0.9999
-        self.num_steps = 0
+"""Static action sets for binary to discrete action space wrappers."""
+# Ref: https://github.com/Kautenja/gym-super-mario-bros/blob/master/gym_super_mario_bros/actions.py
+# actions for the simple run right environment
+RIGHT_ONLY = [
+    ['NOOP'],
+    ['right'],
+    ['right', 'A'],
+    ['right', 'B'],
+    ['right', 'A', 'B'],
+]
+# actions for very simple movement
+SIMPLE_MOVEMENT = [
+    ['NOOP'],
+    ['right'],
+    ['right', 'A'],
+    ['right', 'B'],
+    ['right', 'A', 'B'],
+    ['A'],
+    ['left'],
+]
+# actions for more complex movement
+COMPLEX_MOVEMENT = [
+    ['NOOP'],
+    ['right'],
+    ['right', 'A'],
+    ['right', 'B'],
+    ['right', 'A', 'B'],
+    ['A'],
+    ['left'],
+    ['left', 'A'],
+    ['left', 'B'],
+    ['left', 'A', 'B'],
+    ['down'],
+    ['up'],
+]
 
-    def observation(self, observation):
-        if observation is not None:    # for future meta implementation
-            self.num_steps += 1
-            self.state_mean = self.state_mean * self.alpha + \
-                observation.mean() * (1 - self.alpha)
-            self.state_std = self.state_std * self.alpha + \
-                observation.std() * (1 - self.alpha)
-
-            unbiased_mean = self.state_mean / (1 - pow(self.alpha, self.num_steps))
-            unbiased_std = self.state_std / (1 - pow(self.alpha, self.num_steps))
-
-            return (observation - unbiased_mean) / (unbiased_std + 1e-8)
-        
-        else:
-            return observation
-
-def generate_env(actions= [
-        ['right'],
-        ['right', 'A'],
-        ['right', 'B'],
-        ['right', 'A', 'B'],
-    ], skip_num=4, frame_stack=4):
+def generate_env(actions= RIGHT_ONLY, skip_num=4, frame_stack=4):
     env = gym_super_mario_bros.make("SuperMarioBros-1-1-v0")
     env = JoypadSpace(env, actions)
     env = GrayScale(env)
     env = ResizeObservation(env, shape=84)
-    env = NormalizedEnv(env)
     env = CustomReward(env)
     env = FrameStack(env, num_stack=frame_stack)
     env = SkipFrames(env, skip=skip_num)

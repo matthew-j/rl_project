@@ -6,7 +6,7 @@ import torch.multiprocessing as mp
 from torch.distributions import Categorical
 
 from evaluator import evaluate
-from async_learner import a3c_learner, q_learner, nstep_q_learner
+from async_learner import a3c_learner, q_learner, nstep_q_learner, sarsa_learner, nstep_sarsa_learner
 from models import ActorCriticNN, QLearningNN
 from environment import generate_env
 from shared_optimization import SharedAdam
@@ -154,6 +154,72 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     for p in processes:
         p.join()
 
+def train_nstep_sarsa(num_processes, Tmax, render, model_file):
+    env = generate_env()
+    target_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    target_model.share_memory()
+    optimizer = SharedAdam(target_model.parameters(), lr = 0.0001)
+
+    if model_file is not None:
+        target_model.load_state_dict(model_file)
+
+    T = torch.tensor(0)
+    T.share_memory_()
+    Tlock = mp.Lock()
+    
+    processes = []
+    p = mp.Process(target = evaluate, 
+        args = ("nsarsa", target_model, QLearningNN(env.observation_space.shape, env.action_space.n), 
+        T, Tmax, render)
+    )
+    processes.append(p)
+    p.start()
+
+    for i in range(0, num_processes):
+        if i < num_processes // 2:
+            policy = SampleActions()
+        else:
+            policy = PickBestAction()
+        p = mp.Process(target=nstep_sarsa_learner, args=(i, target_model, Tlock, Tmax, T, 50, policy, 0.9, optimizer))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+
+def train_sarsa(num_processes, Tmax, render, model_file):
+    env = generate_env()
+    target_model = QLearningNN(env.observation_space.shape, env.action_space.n)
+    target_model.share_memory()
+    optimizer = SharedAdam(target_model.parameters(), lr = 0.0001)
+
+    if model_file is not None:
+        target_model.load_state_dict(model_file)
+
+    T = torch.tensor(0)
+    T.share_memory_()
+    Tlock = mp.Lock()
+    
+    processes = []
+    p = mp.Process(target = evaluate, 
+        args = ("sarsa", target_model, QLearningNN(env.observation_space.shape, env.action_space.n), 
+        T, Tmax, render)
+    )
+    processes.append(p)
+    p.start()
+
+    for i in range(0, num_processes):
+        if i < num_processes // 2:
+            policy = SampleActions()
+        else:
+            policy = PickBestAction()
+        p = mp.Process(target=sarsa_learner, args=(i, target_model, Tlock, Tmax, T, 50, policy, 0.9, optimizer))
+        p.start()
+        processes.append(p)
+
+    for p in processes:
+        p.join()
+
 if __name__ == "__main__":
     os.environ['OMP_NUM_THREADS'] = '1'
     args = parser.parse_args()
@@ -169,5 +235,9 @@ if __name__ == "__main__":
         train_qlearning(num_processes, Tmax, render, model_file)
     elif args.algorithm == "nqlearn":
         train_nstep_qlearning(num_processes, Tmax, render, model_file)
+    elif args.algorithm == "sarsa":
+        train_sarsa(num_processes, Tmax, render, model_file)
+    elif args.algorithm == "nsarsa":
+        train_nstep_sarsa(num_processes, Tmax, render, model_file)
     else:
         print("Wrong algorithm")
