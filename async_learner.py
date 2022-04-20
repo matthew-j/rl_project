@@ -36,7 +36,6 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
             action = learner_policy.get_action(action_probs)
 
             next_state, reward, done, _ = env.step(action)
-            reward = max(min(reward, 50), -5)
 
             rewards.append(reward) 
             state_values.append(state_value)
@@ -103,7 +102,6 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, l
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
-            reward = max(min(reward, 50), -5)
 
             q_value  = q_values.gather(-1, torch.tensor([[action]]))
 
@@ -164,7 +162,7 @@ def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_st
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
-            rewards.append(max(min(reward, 50), -5))
+            rewards.append(reward)
             state_action_values.append(q_values.gather(-1, torch.tensor([[action]])))
 
             with Tlock:
@@ -204,34 +202,40 @@ def sarsa_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy,
     while(T.data < Tmax):
         process_model.load_state_dict(target_model.state_dict())
         loss = torch.zeros(1, 1)
+        action = 0
 
         if done:
             cur_state = env.reset()
             cur_state = torch.tensor([cur_state.__array__().tolist()])
             cell_state_process = torch.zeros(1, 256)
             hidden_state_process = torch.zeros(1, 256)
-        else:
-            cell_state_process = cell_state_process.detach()
-            hidden_state_process = hidden_state_process.detach()
-        
-        for step in range(max_steps):
             q_values, (hidden_state_process, cell_state_process) = process_model(
                 (cur_state, (hidden_state_process, cell_state_process))
             )
             action_probs = F.softmax(q_values, dim=-1)
             action = learner_policy.get_action(action_probs)
-
+        else:
+            cell_state_process = cell_state_process.detach()
+            hidden_state_process = hidden_state_process.detach()
+        
+        for step in range(max_steps):
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
-            reward = max(min(reward, 50), -5)
+
+            q_values, (hidden_state_process, cell_state_process) = process_model(
+                (cur_state, (hidden_state_process, cell_state_process))
+            )
+            action_probs = F.softmax(q_values, dim=-1)
+            next_action = learner_policy.get_action(action_probs)
 
             q_value  = q_values.gather(-1, torch.tensor([[action]]))
 
             if not done:
-                _, target_q_value, _ = process_model.act(
-                    (cur_state, (hidden_state_process, cell_state_process)), epsilon=0
+                q_values, _ = process_model(
+                    (cur_state, (hidden_state_process, cell_state_process))
                 )
-                reward = reward + gamma * target_q_value.data
+                return_q_value = q_values.gather(-1, torch.tensor([[next_action]]))
+                reward = reward + gamma * return_q_value.data
 
             loss = loss + .5 * (reward - q_value).pow(2)
 
@@ -240,6 +244,8 @@ def sarsa_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy,
 
             if done:
                 break
+
+            action = next_action
 
         optimizer.zero_grad()
         process_model.zero_grad()
@@ -281,7 +287,7 @@ def nstep_sarsa_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_p
 
             next_state, reward, done, info = env.step(action)
             cur_state = torch.tensor([next_state.__array__().tolist()])
-            rewards.append(max(min(reward, 50), -5))
+            rewards.append(reward)
             state_action_values.append(q_values.gather(-1, torch.tensor([[action]])))
 
             with Tlock:
