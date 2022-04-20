@@ -55,9 +55,6 @@ class ResizeObservation(gym.ObservationWrapper):
 
         return observation
 
-    def step(self, ac):
-        return self.env.step(ac)
-
 class NormalizedEnv(gym.ObservationWrapper):
     def __init__(self, env=None):
         super(NormalizedEnv, self).__init__(env)
