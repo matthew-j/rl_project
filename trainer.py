@@ -94,7 +94,7 @@ def train_qlearning(num_processes, Tmax, render, model_file):
     optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
 
     if model_file is not None:
-        target_model.load_state_dict(model_file)
+        target_model.load_state_dict(torch.load(model_file))
 
     T = torch.tensor(0)
     T.share_memory_()
@@ -128,7 +128,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file):
     optimizer = SharedAdam(behavioral_model.parameters(), lr = 0.0001)
 
     if model_file is not None:
-        target_model.load_state_dict(model_file)
+        target_model.load_state_dict(torch.load(model_file))
 
     T = torch.tensor(0)
     T.share_memory_()
@@ -161,7 +161,7 @@ def train_nstep_sarsa(num_processes, Tmax, render, model_file):
     optimizer = SharedAdam(target_model.parameters(), lr = 0.0001)
 
     if model_file is not None:
-        target_model.load_state_dict(model_file)
+        target_model.load_state_dict(torch.load(model_file))
 
     T = torch.tensor(0)
     T.share_memory_()
@@ -194,7 +194,7 @@ def train_sarsa(num_processes, Tmax, render, model_file):
     optimizer = SharedAdam(target_model.parameters(), lr = 0.0001)
 
     if model_file is not None:
-        target_model.load_state_dict(model_file)
+        target_model.load_state_dict(torch.load(model_file))
 
     T = torch.tensor(0)
     T.share_memory_()
