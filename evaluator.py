@@ -9,6 +9,7 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
     env = generate_env()
     eval_model.eval()
     savecnt = 0
+    best_score = -100
 
     while(T.data < Tmax):
         cur_state = env.reset()
@@ -43,6 +44,6 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
         print(info_string)
         
         savecnt += 1
-        if savecnt % 8 == 0 or episode_reward >= 190:
+        if savecnt % 10 == 0 or episode_reward >= best_score:
             torch.save(eval_model.state_dict(), f"saves/{algorithm_name}{step_num}.pt")
         time.sleep(60)
