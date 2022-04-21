@@ -1,5 +1,5 @@
 __pycache__
-*.pt
+saves/
 checkpoints/
 saves/
 .DS_Store
