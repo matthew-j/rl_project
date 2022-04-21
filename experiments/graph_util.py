@@ -88,4 +88,4 @@ def graph_experiment2():
 
 rolling_avg_cnt = 15
 if __name__ == "__main__":
-    graph_experiment1()
+    graph_experiment2()

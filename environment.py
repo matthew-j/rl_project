@@ -133,6 +133,13 @@ class CustomReward(gym.Wrapper):
 """Static action sets for binary to discrete action space wrappers."""
 # Ref: https://github.com/Kautenja/gym-super-mario-bros/blob/master/gym_super_mario_bros/actions.py
 # actions for the simple run right environment
+RIGHT_ONLY_NO_NOOP = [
+    ['right'],
+    ['right', 'A'],
+    ['right', 'B'],
+    ['right', 'A', 'B'],
+]
+
 RIGHT_ONLY = [
     ['NOOP'],
     ['right'],
