@@ -33,7 +33,7 @@ def graph_experiment1():
     sarsa_fname = "exp1/nsarsa.log"
 
     xdata_a3c, ydata_a3c = get_log_data(a3c_fname)
-    xdata_a3c, ydata_a3c = rolling_avg(xdata_a3c, ydata_a3c, 5)
+    xdata_a3c, ydata_a3c = rolling_avg(xdata_a3c, ydata_a3c, rolling_avg_cnt)
 
     xdata_q, ydata_q = get_log_data(qlearn_fname)
     xdata_q, ydata_q = rolling_avg(xdata_q, ydata_q, rolling_avg_cnt)
@@ -55,7 +55,37 @@ def graph_experiment1():
     fig.legend()
     plt.show()
 
+def graph_experiment2():
+    easy_movement = "exp2/a3c_right_only_no_noop.log"
+    right_only = "exp2/a3c_right_only.log"
+    simple_movement = "exp2/a3c_simple_movement.log"
+    complex_movement = "exp2/a3c_complex_movement.log"
 
-rolling_avg_cnt = 50
+
+    xdata_easy, ydata_easy = get_log_data(easy_movement)
+    xdata_easy, ydata_easy = rolling_avg(xdata_easy, ydata_easy, rolling_avg_cnt)
+
+    xdata_right, ydata_right = get_log_data(right_only)
+    xdata_right, ydata_right = rolling_avg(xdata_right, ydata_right, rolling_avg_cnt)
+
+    xdata_simple, ydata_simple = get_log_data(simple_movement)
+    xdata_simple, ydata_simple = rolling_avg(xdata_simple, ydata_simple, rolling_avg_cnt)
+
+    xdata_complex, ydata_complex = get_log_data(complex_movement)
+    xdata_complex, ydata_complex = rolling_avg(xdata_complex, ydata_complex, rolling_avg_cnt)
+
+    fig, ax = plt.subplots()
+    ax.set(title = "Reward over 6mil Steps")
+    ax.plot(xdata_easy, ydata_easy, label = 'easy movement')
+    ax.plot(xdata_right, ydata_right, label = 'right only')
+    ax.plot(xdata_simple, ydata_simple, label = 'simple movement')
+    ax.plot(xdata_complex, ydata_complex, label = 'complex movement')
+    
+    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    fig.legend()
+    plt.show()
+
+
+rolling_avg_cnt = 15
 if __name__ == "__main__":
     graph_experiment1()
