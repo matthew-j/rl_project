@@ -31,7 +31,6 @@ def graph_experiment1():
     a3c_fname = "exp1/a3c.log"
     qlearn_fname = "exp1/qlearn.log"
     nqlearn_fname = "exp1/nqlearn.log"
-    sarsa_fname = "exp1/nsarsa.log"
 
     xdata_a3c, ydata_a3c = get_log_data(a3c_fname)
     xdata_a3c, ydata_a3c = rolling_avg(xdata_a3c, ydata_a3c, rolling_avg_cnt)
@@ -42,12 +41,8 @@ def graph_experiment1():
     xdata_nq, ydata_nq = get_log_data(nqlearn_fname)
     xdata_nq, ydata_nq = rolling_avg(xdata_nq, ydata_nq, rolling_avg_cnt)
 
-    #xdata_sarsa, ydata_sarsa = get_log_data(sarsa_fname)
-    #xdata_sarsa, ydata_sarsa = rolling_avg(xdata_sarsa, ydata_sarsa, rolling_avg_cnt)
-
     fig, ax = plt.subplots()
     ax.set(title = "Reward over 6mil Steps")
-    #ax.plot(xdata_sarsa, ydata_sarsa, label = '1-step sarsa')
     ax.plot(xdata_a3c, ydata_a3c, label = 'a3c')
     ax.plot(xdata_q, ydata_q, label = '1-step Q')
     ax.plot(xdata_nq, ydata_nq, label = 'n-step Q')
