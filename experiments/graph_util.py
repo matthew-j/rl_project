@@ -1,5 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
+import argparse
 
 def get_log_data(fname):
     file = open(fname, 'r')
@@ -85,7 +86,15 @@ def graph_experiment2():
     fig.legend()
     plt.show()
 
+parser = argparse.ArgumentParser(description="Graph experiments")
+parser.add_argument("experiment_number", metavar="N", type=int, help="experiment number to graph")
 
 rolling_avg_cnt = 15
 if __name__ == "__main__":
-    graph_experiment2()
+    args = parser.parse_args()
+    if args.experiment_number == 1:
+        graph_experiment1()
+    elif args.experiment_number == 2:
+        graph_experiment2()
+    else:
+        print("Invalid experiment number")
