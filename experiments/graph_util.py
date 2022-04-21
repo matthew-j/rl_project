@@ -27,19 +27,24 @@ def rolling_avg(x_data, y_data, k):
         new_x_data.append(sum(x_data[i: i + k]) / k)
     return new_x_data, new_y_data
 
-def graph_experiment1():
+def graph_algorithm_experiment():
     a3c_fname = "exp1/a3c.log"
     qlearn_fname = "exp1/qlearn.log"
     nqlearn_fname = "exp1/nqlearn.log"
 
-    xdata_a3c, ydata_a3c = get_log_data(a3c_fname)
-    xdata_a3c, ydata_a3c = rolling_avg(xdata_a3c, ydata_a3c, rolling_avg_cnt)
+    try: 
+        xdata_a3c, ydata_a3c = get_log_data(a3c_fname)
+        xdata_a3c, ydata_a3c = rolling_avg(xdata_a3c, ydata_a3c, rolling_avg_cnt)
 
-    xdata_q, ydata_q = get_log_data(qlearn_fname)
-    xdata_q, ydata_q = rolling_avg(xdata_q, ydata_q, rolling_avg_cnt)
+        xdata_q, ydata_q = get_log_data(qlearn_fname)
+        xdata_q, ydata_q = rolling_avg(xdata_q, ydata_q, rolling_avg_cnt)
 
-    xdata_nq, ydata_nq = get_log_data(nqlearn_fname)
-    xdata_nq, ydata_nq = rolling_avg(xdata_nq, ydata_nq, rolling_avg_cnt)
+        xdata_nq, ydata_nq = get_log_data(nqlearn_fname)
+        xdata_nq, ydata_nq = rolling_avg(xdata_nq, ydata_nq, rolling_avg_cnt)
+    except FileNotFoundError as e:
+        print(e)
+        print("Make sure to run graph_util.py from the experiments directory")
+        return
 
     fig, ax = plt.subplots()
     ax.set(title = "Reward over 6mil Steps")
@@ -51,24 +56,28 @@ def graph_experiment1():
     fig.legend()
     plt.show()
 
-def graph_experiment2():
+def graph_movement_experiment():
     easy_movement = "exp2/a3c_right_only_no_noop.log"
     right_only = "exp2/a3c_right_only.log"
     simple_movement = "exp2/a3c_simple_movement.log"
     complex_movement = "exp2/a3c_complex_movement.log"
 
+    try:
+        xdata_easy, ydata_easy = get_log_data(easy_movement)
+        xdata_easy, ydata_easy = rolling_avg(xdata_easy, ydata_easy, rolling_avg_cnt)
 
-    xdata_easy, ydata_easy = get_log_data(easy_movement)
-    xdata_easy, ydata_easy = rolling_avg(xdata_easy, ydata_easy, rolling_avg_cnt)
+        xdata_right, ydata_right = get_log_data(right_only)
+        xdata_right, ydata_right = rolling_avg(xdata_right, ydata_right, rolling_avg_cnt)
 
-    xdata_right, ydata_right = get_log_data(right_only)
-    xdata_right, ydata_right = rolling_avg(xdata_right, ydata_right, rolling_avg_cnt)
+        xdata_simple, ydata_simple = get_log_data(simple_movement)
+        xdata_simple, ydata_simple = rolling_avg(xdata_simple, ydata_simple, rolling_avg_cnt)
 
-    xdata_simple, ydata_simple = get_log_data(simple_movement)
-    xdata_simple, ydata_simple = rolling_avg(xdata_simple, ydata_simple, rolling_avg_cnt)
-
-    xdata_complex, ydata_complex = get_log_data(complex_movement)
-    xdata_complex, ydata_complex = rolling_avg(xdata_complex, ydata_complex, rolling_avg_cnt)
+        xdata_complex, ydata_complex = get_log_data(complex_movement)
+        xdata_complex, ydata_complex = rolling_avg(xdata_complex, ydata_complex, rolling_avg_cnt)
+    except FileNotFoundError as e:
+        print(e)
+        print("Make sure to run graph_util.py from the experiments directory")
+        return
 
     fig, ax = plt.subplots()
     ax.set(title = "Reward over 6mil Steps")
@@ -81,15 +90,16 @@ def graph_experiment2():
     fig.legend()
     plt.show()
 
-parser = argparse.ArgumentParser(description="Graph experiments")
-parser.add_argument("experiment_number", metavar="N", type=int, help="experiment number to graph")
+parser = argparse.ArgumentParser(description=f"Graph an experiment, \"algorithm\" or \"movement\"")
+parser.add_argument("experiment", type=str, help="name of experiment to graph")
 
 rolling_avg_cnt = 15
 if __name__ == "__main__":
     args = parser.parse_args()
-    if args.experiment_number == 1:
-        graph_experiment1()
-    elif args.experiment_number == 2:
-        graph_experiment2()
+    if args.experiment == "algorithm":
+        graph_algorithm_experiment()
+    elif args.experiment == "movement":
+        graph_movement_experiment()
     else:
-        print("Invalid experiment number")
+        print("Invalid experiment")
+        print("Options: \"algorithm\", \"movement\"")
