@@ -1,6 +1,22 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import argparse
+plt.rcParams["font.family"] = "times"
+
+def get_tutorial_data(fname):
+    file = open(fname, 'r')
+    lines = file.readlines()
+
+    xvals = []
+    yvals = []
+
+    for i in range(1, len(lines)):
+        line = lines[i]
+        str_array = line.split()
+        xvals.append(int(str_array[1]))
+        yvals.append(float(str_array[3]))
+
+    return xvals, yvals
 
 def get_log_data(fname):
     file = open(fname, 'r')
@@ -28,9 +44,11 @@ def rolling_avg(x_data, y_data, k):
     return new_x_data, new_y_data
 
 def graph_algorithm_experiment():
+    rolling_avg_cnt = 20
     a3c_fname = "exp1/a3c.log"
     qlearn_fname = "exp1/qlearn.log"
     nqlearn_fname = "exp1/nqlearn.log"
+    torch_tutorial_fname = "exp1/pytorch_tutorial.log"
 
     try: 
         xdata_a3c, ydata_a3c = get_log_data(a3c_fname)
@@ -41,6 +59,9 @@ def graph_algorithm_experiment():
 
         xdata_nq, ydata_nq = get_log_data(nqlearn_fname)
         xdata_nq, ydata_nq = rolling_avg(xdata_nq, ydata_nq, rolling_avg_cnt)
+
+        xdata_tutorial, ydata_tutorial = get_tutorial_data(torch_tutorial_fname)
+        xdata_tutorial, ydata_tutorial = rolling_avg(xdata_tutorial, ydata_tutorial, rolling_avg_cnt)
     except FileNotFoundError as e:
         print(e)
         print("Make sure to run graph_util.py from the experiments directory")
@@ -51,12 +72,14 @@ def graph_algorithm_experiment():
     ax.plot(xdata_a3c, ydata_a3c, label = 'a3c')
     ax.plot(xdata_q, ydata_q, label = '1-step Q')
     ax.plot(xdata_nq, ydata_nq, label = 'n-step Q')
+    ax.plot(xdata_tutorial, ydata_tutorial, label = 'baseline')
     
-    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.legend()
     plt.show()
 
 def graph_movement_experiment():
+    rolling_avg_cnt = 15
     easy_movement = "exp2/a3c_right_only_no_noop.log"
     right_only = "exp2/a3c_right_only.log"
     simple_movement = "exp2/a3c_simple_movement.log"
@@ -80,20 +103,19 @@ def graph_movement_experiment():
         return
 
     fig, ax = plt.subplots()
-    ax.set(title = "Reward over 6mil Steps")
+    ax.set(title = "Reward over 5mil Steps")
     ax.plot(xdata_easy, ydata_easy, label = 'easy movement')
     ax.plot(xdata_right, ydata_right, label = 'right only')
     ax.plot(xdata_simple, ydata_simple, label = 'simple movement')
     ax.plot(xdata_complex, ydata_complex, label = 'complex movement')
     
-    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+    ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.legend()
     plt.show()
 
 parser = argparse.ArgumentParser(description=f"Graph an experiment, \"algorithm\" or \"movement\"")
 parser.add_argument("experiment", type=str, help="name of experiment to graph")
 
-rolling_avg_cnt = 15
 if __name__ == "__main__":
     args = parser.parse_args()
     if args.experiment == "algorithm":
