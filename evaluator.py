@@ -47,4 +47,4 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
         if savecnt % 10 == 0 or episode_reward >= best_score:
             torch.save(eval_model.state_dict(), f"saves/{algorithm_name}{step_num}.pt")
         best_score = max(best_score, episode_reward)
-        time.sleep(60)
+        time.sleep(2)
