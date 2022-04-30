@@ -73,6 +73,8 @@ def graph_algorithm_experiment():
     ax.plot(xdata_q, ydata_q, label = '1-step Q')
     ax.plot(xdata_nq, ydata_nq, label = 'n-step Q')
     ax.plot(xdata_tutorial, ydata_tutorial, label = 'baseline')
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("Reward")
     
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.legend()
@@ -108,10 +110,97 @@ def graph_movement_experiment():
     ax.plot(xdata_right, ydata_right, label = 'right only')
     ax.plot(xdata_simple, ydata_simple, label = 'simple movement')
     ax.plot(xdata_complex, ydata_complex, label = 'complex movement')
+    ax.set_xlabel("Steps")
+    ax.set_ylabel("Reward")
     
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.legend()
     plt.show()
+
+def graph_continuous_experiment():
+    rolling_avg_cnt = 15
+    continous_fname = "exp3/a3c_continuous_11_12.log"
+    cold_start_fname = "exp3/a3c_1_2.log"
+
+    try:
+        xdata_cont, ydata_cont = get_log_data(continous_fname)
+        xdata_cont, ydata_cont = rolling_avg(xdata_cont, ydata_cont, rolling_avg_cnt)
+
+        xdata_cold, ydata_cold = get_log_data(cold_start_fname)
+        xdata_cold, ydata_cold = rolling_avg(xdata_cold, ydata_cold, rolling_avg_cnt)
+    except FileNotFoundError as e:
+        print(e)
+        print("Make sure to run graph_util.py from the experiments directory")
+        return
+
+    fig, ax = plt.subplots(1, 2)
+    plt.suptitle("Reward over 6 million steps")
+
+    ax[0].plot(xdata_cont, ydata_cont)
+    ax[0].xaxis.set_major_locator(plt.MaxNLocator(10))
+    ax[0].set_xlabel("Steps")
+    ax[0].set_ylabel("Reward")
+    ax[0].set_title("Levels 1 and 2")
+
+    ax[1].plot(xdata_cold, ydata_cold)
+    ax[1].xaxis.set_major_locator(plt.MaxNLocator(10))
+    ax[1].set_xlabel("Steps")
+    ax[1].set_ylabel("Reward")
+    ax[1].set_title("Level 2")
+    plt.show()
+
+def graph_levels_experiment():
+    rolling_avg_cnt = 15
+    level_1_2 = "exp3/a3c_1_2.log"
+    level_1_4 = "exp3/a3c_1_4.log"
+    level_2_2 = "exp3/a3c_2_2.log"
+    level_4_1 = "exp3/a3c_4_1.log"
+
+    try:
+        xdata_1_2, ydata_1_2 = get_log_data(level_1_2)
+        xdata_1_2, ydata_1_2 = rolling_avg(xdata_1_2, ydata_1_2, rolling_avg_cnt)
+
+        xdata_1_4, ydata_1_4 = get_log_data(level_1_4)
+        xdata_1_4, ydata_1_4 = rolling_avg(xdata_1_4, ydata_1_4, rolling_avg_cnt)
+
+        xdata_2_2, ydata_2_2 = get_log_data(level_2_2)
+        xdata_2_2, ydata_2_2 = rolling_avg(xdata_2_2, ydata_2_2, rolling_avg_cnt)
+
+        xdata_4_1, ydata_4_1 = get_log_data(level_4_1)
+        xdata_4_1, ydata_4_1 = rolling_avg(xdata_4_1, ydata_4_1, rolling_avg_cnt)
+    except FileNotFoundError as e:
+        print(e)
+        print("Make sure to run graph_util.py from the experiments directory")
+        return
+
+    fig, ax = plt.subplots(2, 2)
+    plt.suptitle("Reward over 6 million steps")
+
+    ax[0, 0].plot(xdata_1_2, ydata_1_2)
+    ax[0, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
+    ax[0, 0].set_xlabel("Steps")
+    ax[0, 0].set_ylabel("Reward")
+    ax[0, 0].set_title("World 1 level 2")
+
+    ax[0, 1].plot(xdata_1_4, ydata_1_4)
+    ax[0, 1].xaxis.set_major_locator(plt.MaxNLocator(10))
+    ax[0, 1].set_xlabel("Steps")
+    ax[0, 1].set_ylabel("Reward")
+    ax[0, 1].set_title("World 1 level 4")
+
+    ax[1, 0].plot(xdata_2_2, ydata_2_2)
+    ax[1, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
+    ax[1, 0].set_xlabel("Steps")
+    ax[1, 0].set_ylabel("Reward")
+    ax[1, 0].set_title("World 2 level 2")
+
+    ax[1, 1].plot(xdata_4_1, ydata_4_1)
+    ax[1, 1].xaxis.set_major_locator(plt.MaxNLocator(10))
+    ax[1, 1].set_xlabel("Steps")
+    ax[1, 1].set_ylabel("Reward")
+    ax[1, 1].set_title("World 4 level 1")
+    plt.show()
+
 
 parser = argparse.ArgumentParser(description=f"Graph an experiment, \"algorithm\" or \"movement\"")
 parser.add_argument("experiment", type=str, help="name of experiment to graph")
@@ -122,6 +211,10 @@ if __name__ == "__main__":
         graph_algorithm_experiment()
     elif args.experiment == "movement":
         graph_movement_experiment()
+    elif args.experiment == "levels":
+        graph_levels_experiment()
+    elif args.experiment == "continuous":
+        graph_continuous_experiment()
     else:
         print("Invalid experiment")
-        print("Options: \"algorithm\", \"movement\"")
+        print("Options: \"algorithm\", \"movement\", \"levels\", \"continuous\"")
