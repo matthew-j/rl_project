@@ -140,13 +140,13 @@ def graph_continuous_experiment():
     ax[0].xaxis.set_major_locator(plt.MaxNLocator(10))
     ax[0].set_xlabel("Steps")
     ax[0].set_ylabel("Reward")
-    ax[0].set_title("Levels 1 and 2")
+    ax[0].set_title("World 1-1 and World 1-2")
 
     ax[1].plot(xdata_cold, ydata_cold)
     ax[1].xaxis.set_major_locator(plt.MaxNLocator(10))
     ax[1].set_xlabel("Steps")
     ax[1].set_ylabel("Reward")
-    ax[1].set_title("Level 2")
+    ax[1].set_title("World 1-2")
     plt.show()
 
 def graph_levels_experiment():
@@ -178,27 +178,25 @@ def graph_levels_experiment():
 
     ax[0, 0].plot(xdata_1_2, ydata_1_2)
     ax[0, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
-    ax[0, 0].set_xlabel("Steps")
     ax[0, 0].set_ylabel("Reward")
-    ax[0, 0].set_title("World 1 level 2")
+    ax[0, 0].set_title("World 1-2")
 
     ax[0, 1].plot(xdata_1_4, ydata_1_4)
     ax[0, 1].xaxis.set_major_locator(plt.MaxNLocator(10))
-    ax[0, 1].set_xlabel("Steps")
     ax[0, 1].set_ylabel("Reward")
-    ax[0, 1].set_title("World 1 level 4")
+    ax[0, 1].set_title("World 1-4")
 
     ax[1, 0].plot(xdata_2_2, ydata_2_2)
     ax[1, 0].xaxis.set_major_locator(plt.MaxNLocator(10))
     ax[1, 0].set_xlabel("Steps")
     ax[1, 0].set_ylabel("Reward")
-    ax[1, 0].set_title("World 2 level 2")
+    ax[1, 0].set_title("World 2-2")
 
     ax[1, 1].plot(xdata_4_1, ydata_4_1)
     ax[1, 1].xaxis.set_major_locator(plt.MaxNLocator(10))
     ax[1, 1].set_xlabel("Steps")
     ax[1, 1].set_ylabel("Reward")
-    ax[1, 1].set_title("World 4 level 1")
+    ax[1, 1].set_title("World 4-1")
     plt.show()
 
 

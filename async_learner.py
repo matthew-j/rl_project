@@ -51,7 +51,6 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
                 break
         
         R = torch.zeros(1,1)
-        advantage_estimation = torch.zeros(1,1)
         if not done:
             q_values, state_value, (hidden_state, cell_state) = model((cur_state, (hidden_state, cell_state)))
             R = state_value.data
@@ -61,8 +60,7 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
         state_values.append(R)
         for i in reversed(range(len(rewards))):
             R = rewards[i] + gamma * R
-            advantage_estimation = advantage_estimation * gamma + (rewards[i] + gamma * state_values[i+1].data - state_values[i].data)
-            q_loss = q_loss - log_probs[i] * advantage_estimation - beta * entropy[i]
+            q_loss = q_loss - log_probs[i] * (R - state_values[i]).data - beta * entropy[i]
             v_loss = v_loss + 0.5 * (R - state_values[i]).pow(2)
             
         optimizer.zero_grad()
