@@ -1,4 +1,5 @@
 ## Asynchronous RL Algorithms for Super Mario Bros
+![Alt Text](images/mario.gif)
 
 ### Setup
 Ensure all dependencies in requirements.txt are installed. 
