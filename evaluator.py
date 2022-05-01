@@ -31,7 +31,8 @@ def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
                 action, _, (hidden_state, cell_state) = eval_model.act((cur_state, (hidden_state, cell_state)))
             cur_state, reward, done, info = env.step(action)
             if render:
-                env.render()
+                for i in range(8):
+                    env.render()
             episode_reward += reward
 
             if done:
