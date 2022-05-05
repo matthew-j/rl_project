@@ -3,4 +3,4 @@
 # platform: win-64
 gym-super-mario-bros==7.3.2
 matplotlib==3.5.1
-pytorch==1.11.0
+torch
