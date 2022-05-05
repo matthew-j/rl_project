@@ -68,7 +68,7 @@ def graph_algorithm_experiment():
         return
 
     fig, ax = plt.subplots()
-    ax.set(title = "Reward over 6mil Steps")
+    ax.set(title = "Reward over 6 million Steps")
     ax.plot(xdata_a3c, ydata_a3c, label = 'a3c')
     ax.plot(xdata_q, ydata_q, label = '1-step Q')
     ax.plot(xdata_nq, ydata_nq, label = 'n-step Q')
@@ -105,7 +105,7 @@ def graph_movement_experiment():
         return
 
     fig, ax = plt.subplots()
-    ax.set(title = "Reward over 5mil Steps")
+    ax.set(title = "Reward over 5 million Steps")
     ax.plot(xdata_easy, ydata_easy, label = 'easy movement')
     ax.plot(xdata_right, ydata_right, label = 'right only')
     ax.plot(xdata_simple, ydata_simple, label = 'simple movement')
