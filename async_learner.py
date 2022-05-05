@@ -2,11 +2,10 @@ import torch
 import torch.nn.functional as F
 
 from  models import ActorCriticNN, QLearningNN
-from environment import generate_env
 from shared_optimization import copy_learner_grads
 
-def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, beta, optimizer):
-    env = generate_env()
+def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, beta, optimizer, env_generator):
+    env = env_generator.generate_env()
     torch.manual_seed(1 + pnum)
     model = ActorCriticNN(env.observation_space.shape, env.action_space.n)
     model.train()
@@ -70,8 +69,8 @@ def a3c_learner(pnum, target_model, Tlock, Tmax, T, max_steps, learner_policy, g
         copy_learner_grads(model, target_model)
         optimizer.step()
 
-def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer):
-    env = generate_env()
+def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer, env_generator):
+    env = env_generator.generate_env()
     torch.manual_seed(1 + pnum)
 
     done = True
@@ -127,8 +126,8 @@ def q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, l
         copy_learner_grads(process_model, behavioral_model)
         optimizer.step()
 
-def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer):
-    env = generate_env()
+def nstep_q_learner(pnum, target_model, behavioral_model, Tlock, Tmax, T, max_steps, learner_policy, gamma, I_target, optimizer, env_generator):
+    env = env_generator.generate_env()
     torch.manual_seed(1 + pnum)
     
     done = True

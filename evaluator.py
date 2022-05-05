@@ -2,11 +2,9 @@ import time
 import torch
 import logging
 
-from environment import generate_env
-
-def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render):
+def evaluate(algorithm_name, target_model, eval_model, T, Tmax, render, env_generator):
     logging.basicConfig(filename=f"logs/{algorithm_name}.log", level=logging.DEBUG)
-    env = generate_env()
+    env = env_generator.generate_env()
     eval_model.eval()
     savecnt = 0
     best_score = -100

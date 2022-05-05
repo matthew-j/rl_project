@@ -55,6 +55,8 @@ class ResizeObservation(gym.ObservationWrapper):
 
         return observation
 
+# normalization technique inspired by:
+# https://github.com/sadeqa/Super-Mario-Bros-RL/blob/master/A3C/common/atari_wrapper.py#L153
 class NormalizedEnv(gym.ObservationWrapper):
     def __init__(self, env=None):
         super(NormalizedEnv, self).__init__(env)
@@ -79,6 +81,8 @@ class NormalizedEnv(gym.ObservationWrapper):
         else:
             return observation
 
+# modification to the gym_super_mario_bros reward function inspired by:
+# https://github.com/sadeqa/Super-Mario-Bros-RL/blob/master/A3C/common/atari_wrapper.py#L76
 class CustomReward(gym.Wrapper):
     def __init__(self, env=None):
         gym.Wrapper.__init__(self, env)
@@ -133,54 +137,62 @@ class CustomReward(gym.Wrapper):
 """Static action sets for binary to discrete action space wrappers."""
 # Ref: https://github.com/Kautenja/gym-super-mario-bros/blob/master/gym_super_mario_bros/actions.py
 # actions for the simple run right environment
-RIGHT_ONLY_NO_NOOP = [
-    ['right'],
-    ['right', 'A'],
-    ['right', 'B'],
-    ['right', 'A', 'B'],
-]
+action_spaces = {
+    "easy_movement": [
+        ['right'],
+        ['right', 'A'],
+        ['right', 'B'],
+        ['right', 'A', 'B'],
+    ],
+    "right_only": [
+        ['NOOP'],
+        ['right'],
+        ['right', 'A'],
+        ['right', 'B'],
+        ['right', 'A', 'B'],
+    ],
+    # actions for very simple movement
+    "simple_movement": [
+        ['NOOP'],
+        ['right'],
+        ['right', 'A'],
+        ['right', 'B'],
+        ['right', 'A', 'B'],
+        ['A'],
+        ['left'],
+    ],
+    # actions for more complex movement
+    "complex_movement": [
+        ['NOOP'],
+        ['right'],
+        ['right', 'A'],
+        ['right', 'B'],
+        ['right', 'A', 'B'],
+        ['A'],
+        ['left'],
+        ['left', 'A'],
+        ['left', 'B'],
+        ['left', 'A', 'B'],
+        ['down'],
+        ['up'],
+    ]
+}
 
-RIGHT_ONLY = [
-    ['NOOP'],
-    ['right'],
-    ['right', 'A'],
-    ['right', 'B'],
-    ['right', 'A', 'B'],
-]
-# actions for very simple movement
-SIMPLE_MOVEMENT = [
-    ['NOOP'],
-    ['right'],
-    ['right', 'A'],
-    ['right', 'B'],
-    ['right', 'A', 'B'],
-    ['A'],
-    ['left'],
-]
-# actions for more complex movement
-COMPLEX_MOVEMENT = [
-    ['NOOP'],
-    ['right'],
-    ['right', 'A'],
-    ['right', 'B'],
-    ['right', 'A', 'B'],
-    ['A'],
-    ['left'],
-    ['left', 'A'],
-    ['left', 'B'],
-    ['left', 'A', 'B'],
-    ['down'],
-    ['up'],
-]
+class CustomEnvironment:
+    def __init__(self, env_name, actions, skip_num, frame_stack):
+        self.actions = actions
+        self.skip_num = skip_num
+        self.frame_stack = frame_stack
+        self.env_name = env_name
 
-def generate_env(actions= RIGHT_ONLY, skip_num=4, frame_stack=4):
-    env = gym_super_mario_bros.make("SuperMarioBros-1-1-v0")
-    env = JoypadSpace(env, actions)
-    env = GrayScale(env)
-    env = ResizeObservation(env, shape=84)
-    env = NormalizedEnv(env)
-    env = CustomReward(env)
-    env = FrameStack(env, num_stack=frame_stack)
-    env = SkipFrames(env, skip=skip_num)
+    def generate_env(self):
+        env = gym_super_mario_bros.make(self.env_name)
+        env = JoypadSpace(env, self.actions)
+        env = GrayScale(env)
+        env = ResizeObservation(env, shape=84)
+        env = NormalizedEnv(env)
+        env = CustomReward(env)
+        env = FrameStack(env, num_stack=self.frame_stack)
+        env = SkipFrames(env, skip=self.skip_num)
 
-    return env
+        return env
