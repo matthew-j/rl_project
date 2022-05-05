@@ -149,7 +149,7 @@ def train_nstep_qlearning(num_processes, Tmax, render, model_file, env_generator
             policy = SampleActions()
         else:
             policy = PickBestAction()
-        p = mp.Process(target=nstep_q_learner, kwargs=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.9, 100, optimizer, env_generator))
+        p = mp.Process(target=nstep_q_learner, args=(i, target_model, behavioral_model, Tlock, Tmax, T, 50, policy, 0.9, 100, optimizer, env_generator))
         p.start()
         processes.append(p)
 
