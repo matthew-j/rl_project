@@ -39,4 +39,17 @@ Example of playing World 1-1 with a fully trained model:
 python trainer.py -r -p 0 a3c --actions easy_movement --model_file experiments/exp2/a3c_best_easy_movement.pt
 ```
 
+Other interesting demos:
+```
+python trainer.py -r -p 0 a3c --env SuperMarioBros-1-4-v0 --model_file experiments/exp3/a3c_1_4.pt
+```
+
+```
+python trainer.py -r -p 0 a3c --env SuperMarioBros-4-1-v0 --model_file experiments/exp3/a3c_4_1.pt
+```
+
+```
+python trainer.py -r -p 0 a3c --env SuperMarioBros-1-2-v0 --model_file experiments/exp3/a3c_1_2.pt
+```
+
 [Gym Super Mario Bros. Environment](https://github.com/Kautenja/gym-super-mario-bros)
