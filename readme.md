@@ -15,14 +15,28 @@ python trainer.py <algorithm of choice>
 
 Algorithm choices: "a3c", "qlearn", and "nqlearn"
 
+Action space choices: "right_only", "easy_movement", "simple_movement", "complex_movement", default is right only
+
+Environment names are specified by Gym Super Mario Bros., default is SuperMarioBros-1-1-v0
+
+Other arguments:
+* ```-p```, ```--processes```: specify number of training threads, default is 4 (use 0 for evaluation only)
+* ```-r```, ```--render```: flag that specifies to render gameplay from the evaluator
+* ```--model_file```: specify a .pt file as the starting model, some examples are available in experiments directory. Make sure the correct environment and action space for that model is specified.
+* ```--tmax```: specify the maximum number of training steps, default is 6 million
+
+Training logs are written to ```<algorithm>.log``` in the logs directory, and model files are periodically saved to the saves directory.
+
 Example: 
 
 ```
 python trainer.py a3c
 ```
 
+Example of playing World 1-1 with a fully trained model:
+
 ```
-python trainer.py -r -p 0 a3c --actions easy_movement --model_file experiments/exp2/a3c_best_right_only_no_noop.pt
+python trainer.py -r -p 0 a3c --actions easy_movement --model_file experiments/exp2/a3c_best_easy_movement.pt
 ```
 
-Gym Super Mario Bros. environment: [](https://github.com/Kautenja/gym-super-mario-bros)
+[Gym Super Mario Bros. Environment](https://github.com/Kautenja/gym-super-mario-bros)
